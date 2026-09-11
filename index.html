@@ -1,1 +1,566 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Inventra Pro | Ju5t Fun</title>
+
+<!-- =========================================
+     ICON
+========================================= -->
+<link rel="icon" href="assets/icon.png">
+
+<!-- =========================================
+     CSS UTAMA
+========================================= -->
+<link rel="stylesheet" href="style.css">
+
+<!-- =========================================
+     SUPABASE
+========================================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- =========================================
+     SHEETJS (EXPORT EXCEL)
+========================================= -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+</head>
+<body>
+
+<!-- =========================================
+     LOADING SCREEN
+========================================= -->
+<div id="loadingScreen" class="loading-screen">
+  <div class="loader"></div>
+  <p>Memuat Inventra Pro...</p>
+</div>
+
+<!-- =========================================
+     LOGIN PAGE
+========================================= -->
+<section id="loginPage" class="login-page">
+
+  <div class="login-card">
+
+    <div class="login-logo">
+      <h1>Inventra Pro</h1>
+      <p>Smart Warehouse Management</p>
+      <small>Developed by Ju5t Fun</small>
+    </div>
+
+    <div class="login-form">
+
+      <input
+      type="email"
+      id="loginEmail"
+      placeholder="Email Admin">
+
+      <input
+      type="password"
+      id="loginPassword"
+      placeholder="Password">
+
+      <button onclick="loginAdmin()">
+        Login
+      </button>
+
+      <p id="loginStatus"></p>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- =========================================
+     MAIN APP
+========================================= -->
+<section id="app" class="app hidden">
+
+  <!-- =========================================
+       SIDEBAR
+  ========================================= -->
+  <aside class="sidebar">
+
+    <div class="sidebar-logo">
+      <h2>Inventra Pro</h2>
+      <small>Ju5t Fun</small>
+    </div>
+
+    <nav>
+
+      <button onclick="showPage('dashboardPage')">
+        📊 Dashboard
+      </button>
+
+      <button onclick="showPage('barangPage')">
+        📦 Data Barang
+      </button>
+
+      <button onclick="showPage('barangMasukPage')">
+        📥 Barang Masuk
+      </button>
+
+      <button onclick="showPage('barangKeluarPage')">
+        📤 Barang Keluar
+      </button>
+
+      <button onclick="showPage('supplierPage')">
+        🏭 Supplier
+      </button>
+
+      <button onclick="showPage('spreadsheetPage')">
+        📑 Spreadsheet
+      </button>
+
+      <button onclick="showPage('stockPage')">
+        📋 Stock Opname
+      </button>
+
+      <button onclick="showPage('activityPage')">
+        📜 Activity Log
+      </button>
+
+      <button onclick="showPage('settingPage')">
+        ⚙ Pengaturan
+      </button>
+
+    </nav>
+
+    <button class="logout-btn" onclick="logoutAdmin()">
+      Logout
+    </button>
+
+  </aside>
+
+  <!-- =========================================
+       CONTENT
+  ========================================= -->
+  <main class="content">
+
+    <!-- =====================================
+         TOPBAR
+    ====================================== -->
+    <header class="topbar">
+
+      <div>
+        <h2 id="pageTitle">
+          Dashboard
+        </h2>
+      </div>
+
+      <div class="admin-box">
+        Admin
+      </div>
+
+    </header>
+
+    <!-- =====================================
+         DASHBOARD
+    ====================================== -->
+    <section id="dashboardPage" class="page">
+
+      <div class="stats-grid">
+
+        <div class="stat-card">
+          <span>Total Barang</span>
+          <h2 id="totalBarang">0</h2>
+        </div>
+
+        <div class="stat-card">
+          <span>Total Stok</span>
+          <h2 id="totalStok">0</h2>
+        </div>
+
+        <div class="stat-card">
+          <span>Barang Masuk</span>
+          <h2 id="totalMasuk">0</h2>
+        </div>
+
+        <div class="stat-card">
+          <span>Barang Keluar</span>
+          <h2 id="totalKeluar">0</h2>
+        </div>
+
+        <div class="stat-card warning">
+          <span>Stok Menipis</span>
+          <h2 id="stokMenipis">0</h2>
+        </div>
+
+      </div>
+
+      <div class="panel">
+
+        <h3>Barang Terbaru</h3>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Kode</th>
+              <th>Nama</th>
+              <th>Kategori</th>
+              <th>Stok</th>
+            </tr>
+          </thead>
+
+          <tbody id="dashboardBarang"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         DATA BARANG
+    ====================================== -->
+    <section id="barangPage" class="page hidden">
+
+      <div class="panel">
+
+        <div class="panel-header">
+
+          <h3>Data Barang</h3>
+
+          <button onclick="openBarangModal()">
+            + Tambah Barang
+          </button>
+
+        </div>
+
+        <input
+        id="searchBarang"
+        class="search-box"
+        placeholder="Cari barang..."
+        onkeyup="searchBarang()">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Kode</th>
+              <th>Nama</th>
+              <th>Kategori</th>
+              <th>Supplier</th>
+              <th>Rak</th>
+              <th>Stok</th>
+              <th>Min</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody id="barangTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         BARANG MASUK
+    ====================================== -->
+    <section id="barangMasukPage" class="page hidden">
+
+      <div class="panel">
+
+        <h3>Barang Masuk</h3>
+
+        <form id="formMasuk">
+
+          <select id="masukBarang"></select>
+
+          <input
+          type="number"
+          id="masukQty"
+          placeholder="Jumlah">
+
+          <input
+          type="text"
+          id="masukKeterangan"
+          placeholder="Keterangan">
+
+          <button type="submit">
+            Simpan
+          </button>
+
+        </form>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Barang</th>
+              <th>Qty</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+
+          <tbody id="barangMasukTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         BARANG KELUAR
+    ====================================== -->
+    <section id="barangKeluarPage" class="page hidden">
+
+      <div class="panel">
+
+        <h3>Barang Keluar</h3>
+
+        <form id="formKeluar">
+
+          <select id="keluarBarang"></select>
+
+          <input
+          type="number"
+          id="keluarQty"
+          placeholder="Jumlah">
+
+          <input
+          type="text"
+          id="keluarTujuan"
+          placeholder="Tujuan">
+
+          <button type="submit">
+            Simpan
+          </button>
+
+        </form>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Barang</th>
+              <th>Qty</th>
+              <th>Tujuan</th>
+            </tr>
+          </thead>
+
+          <tbody id="barangKeluarTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         SUPPLIER
+    ====================================== -->
+    <section id="supplierPage" class="page hidden">
+
+      <div class="panel">
+
+        <div class="panel-header">
+
+          <h3>Supplier</h3>
+
+          <button onclick="openSupplierModal()">
+            + Supplier
+          </button>
+
+        </div>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Telepon</th>
+              <th>Alamat</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody id="supplierTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         SPREADSHEET
+    ====================================== -->
+    <section id="spreadsheetPage" class="page hidden">
+
+      <div class="panel">
+
+        <div class="panel-header">
+
+          <h3>Spreadsheet Barang</h3>
+
+          <button onclick="exportExcel()">
+            Export Excel
+          </button>
+
+        </div>
+
+        <div id="spreadsheetContainer"></div>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         STOCK OPNAME
+    ====================================== -->
+    <section id="stockPage" class="page hidden">
+
+      <div class="panel">
+
+        <h3>Stock Opname</h3>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Barang</th>
+              <th>Stok Sistem</th>
+              <th>Stok Fisik</th>
+              <th>Selisih</th>
+            </tr>
+          </thead>
+
+          <tbody id="stockTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         ACTIVITY LOG
+    ====================================== -->
+    <section id="activityPage" class="page hidden">
+
+      <div class="panel">
+
+        <h3>Activity Log</h3>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Aktivitas</th>
+            </tr>
+          </thead>
+
+          <tbody id="activityTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <!-- =====================================
+         PENGATURAN
+    ====================================== -->
+    <section id="settingPage" class="page hidden">
+
+      <div class="panel">
+
+        <h3>Pengaturan</h3>
+
+        <p>Inventra Pro v1.0</p>
+        <p>Developer: Ju5t Fun</p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</section>
+
+<!-- =========================================
+     MODAL BARANG
+========================================= -->
+<div id="barangModal" class="modal hidden">
+
+  <div class="modal-content">
+
+    <h3>Data Barang</h3>
+
+    <input id="barangKode" placeholder="Kode Barang">
+    <input id="barangNama" placeholder="Nama Barang">
+    <input id="barangKategori" placeholder="Kategori">
+    <input id="barangSupplier" placeholder="Supplier">
+    <input id="barangRak" placeholder="Rak">
+    <input id="barangStok" type="number" placeholder="Stok">
+    <input id="barangMinimum" type="number" placeholder="Stok Minimum">
+
+    <div class="modal-actions">
+
+      <button onclick="saveBarang()">
+        Simpan
+      </button>
+
+      <button onclick="closeBarangModal()">
+        Batal
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- =========================================
+     MODAL SUPPLIER
+========================================= -->
+<div id="supplierModal" class="modal hidden">
+
+  <div class="modal-content">
+
+    <h3>Supplier</h3>
+
+    <input id="supplierNama" placeholder="Nama Supplier">
+    <input id="supplierTelepon" placeholder="Telepon">
+    <textarea id="supplierAlamat"></textarea>
+
+    <div class="modal-actions">
+
+      <button onclick="saveSupplier()">
+        Simpan
+      </button>
+
+      <button onclick="closeSupplierModal()">
+        Batal
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- =========================================
+     TOAST NOTIFICATION
+========================================= -->
+<div id="toast" class="toast"></div>
+
+<!-- =========================================
+     APP JS
+========================================= -->
+<script src="app.js"></script>
+
+</body>
+</html>
+```
