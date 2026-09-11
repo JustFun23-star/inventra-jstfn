@@ -1,0 +1,483 @@
+```javascript id="y7m2kp"
+/* =========================================
+   MODAL BARANG
+========================================= */
+
+function openBarangModal(){
+
+  barangEditId = null;
+
+  document
+  .getElementById(
+    "barangModal"
+  )
+  .classList.remove(
+    "hidden"
+  );
+
+}
+
+function closeBarangModal(){
+
+  document
+  .getElementById(
+    "barangModal"
+  )
+  .classList.add(
+    "hidden"
+  );
+
+}
+
+/* =========================================
+   LOAD DATA BARANG
+========================================= */
+
+async function loadBarang(){
+
+  const {
+
+    data,
+    error
+
+  } = await supabaseClient
+
+  .from("barang")
+
+  .select("*")
+
+  .order(
+    "id",
+    {
+      ascending:false
+    }
+  );
+
+  if(error){
+
+    console.error(error);
+
+    return;
+
+  }
+
+  let html = "";
+
+  data.forEach(item=>{
+
+    html += `
+
+    <tr>
+
+      <td>${item.kode}</td>
+
+      <td>${item.nama}</td>
+
+      <td>${item.kategori || '-'}</td>
+
+      <td>${item.supplier || '-'}</td>
+
+      <td>${item.rak || '-'}</td>
+
+      <td>${item.stok}</td>
+
+      <td>${item.stok_minimum}</td>
+
+      <td>
+
+        <button
+        onclick="editBarang(${item.id})">
+
+          Edit
+
+        </button>
+
+        <button
+        onclick="hapusBarang(${item.id})">
+
+          Hapus
+
+        </button>
+
+      </td>
+
+    </tr>
+
+    `;
+
+  });
+
+  document
+  .getElementById(
+    "barangTable"
+  )
+  .innerHTML = html;
+
+}
+
+/* =========================================
+   SIMPAN BARANG
+========================================= */
+
+async function saveBarang(){
+
+  const kode =
+  document
+  .getElementById(
+    "barangKode"
+  ).value;
+
+  const nama =
+  document
+  .getElementById(
+    "barangNama"
+  ).value;
+
+  const kategori =
+  document
+  .getElementById(
+    "barangKategori"
+  ).value;
+
+  const supplier =
+  document
+  .getElementById(
+    "barangSupplier"
+  ).value;
+
+  const rak =
+  document
+  .getElementById(
+    "barangRak"
+  ).value;
+
+  const stok =
+  parseInt(
+
+    document
+    .getElementById(
+      "barangStok"
+    ).value || 0
+
+  );
+
+  const minimum =
+  parseInt(
+
+    document
+    .getElementById(
+      "barangMinimum"
+    ).value || 0
+
+  );
+
+  if(!kode || !nama){
+
+    showToast(
+      "Kode dan Nama wajib diisi"
+    );
+
+    return;
+
+  }
+
+  if(barangEditId){
+
+    const { error } =
+    await supabaseClient
+
+    .from("barang")
+
+    .update({
+
+      kode,
+      nama,
+      kategori,
+      supplier,
+      rak,
+      stok,
+      stok_minimum:minimum
+
+    })
+
+    .eq(
+      "id",
+      barangEditId
+    );
+
+    if(error){
+
+      showToast(
+        error.message
+      );
+
+      return;
+
+    }
+
+    await saveActivity(
+      `Edit barang ${nama}`
+    );
+
+    showToast(
+      "Barang berhasil diperbarui"
+    );
+
+  }else{
+
+    const { error } =
+    await supabaseClient
+
+    .from("barang")
+
+    .insert([{
+
+      kode,
+      nama,
+      kategori,
+      supplier,
+      rak,
+      stok,
+      stok_minimum:minimum
+
+    }]);
+
+    if(error){
+
+      showToast(
+        error.message
+      );
+
+      return;
+
+    }
+
+    await saveActivity(
+      `Tambah barang ${nama}`
+    );
+
+    showToast(
+      "Barang berhasil ditambahkan"
+    );
+
+  }
+
+  clearBarangForm();
+
+  closeBarangModal();
+
+  await loadBarang();
+
+  await loadDashboard();
+
+}
+
+/* =========================================
+   EDIT BARANG
+========================================= */
+
+async function editBarang(id){
+
+  const {
+
+    data
+
+  } = await supabaseClient
+
+  .from("barang")
+
+  .select("*")
+
+  .eq(
+    "id",
+    id
+  )
+
+  .single();
+
+  barangEditId = id;
+
+  document
+  .getElementById(
+    "barangKode"
+  ).value =
+  data.kode;
+
+  document
+  .getElementById(
+    "barangNama"
+  ).value =
+  data.nama;
+
+  document
+  .getElementById(
+    "barangKategori"
+  ).value =
+  data.kategori || "";
+
+  document
+  .getElementById(
+    "barangSupplier"
+  ).value =
+  data.supplier || "";
+
+  document
+  .getElementById(
+    "barangRak"
+  ).value =
+  data.rak || "";
+
+  document
+  .getElementById(
+    "barangStok"
+  ).value =
+  data.stok;
+
+  document
+  .getElementById(
+    "barangMinimum"
+  ).value =
+  data.stok_minimum;
+
+  openBarangModal();
+
+}
+
+/* =========================================
+   HAPUS BARANG
+========================================= */
+
+async function hapusBarang(id){
+
+  const konfirmasi =
+  confirm(
+    "Hapus barang ini ?"
+  );
+
+  if(!konfirmasi){
+
+    return;
+
+  }
+
+  const { error } =
+  await supabaseClient
+
+  .from("barang")
+
+  .delete()
+
+  .eq(
+    "id",
+    id
+  );
+
+  if(error){
+
+    showToast(
+      error.message
+    );
+
+    return;
+
+  }
+
+  await saveActivity(
+    `Hapus barang ID ${id}`
+  );
+
+  showToast(
+    "Barang berhasil dihapus"
+  );
+
+  await loadBarang();
+
+  await loadDashboard();
+
+}
+
+/* =========================================
+   RESET FORM BARANG
+========================================= */
+
+function clearBarangForm(){
+
+  document
+  .getElementById(
+    "barangKode"
+  ).value="";
+
+  document
+  .getElementById(
+    "barangNama"
+  ).value="";
+
+  document
+  .getElementById(
+    "barangKategori"
+  ).value="";
+
+  document
+  .getElementById(
+    "barangSupplier"
+  ).value="";
+
+  document
+  .getElementById(
+    "barangRak"
+  ).value="";
+
+  document
+  .getElementById(
+    "barangStok"
+  ).value="";
+
+  document
+  .getElementById(
+    "barangMinimum"
+  ).value="";
+
+}
+
+/* =========================================
+   SEARCH BARANG
+========================================= */
+
+function searchBarang(){
+
+  const keyword =
+  document
+
+  .getElementById(
+    "searchBarang"
+  )
+
+  .value
+
+  .toLowerCase();
+
+  const rows =
+  document.querySelectorAll(
+    "#barangTable tr"
+  );
+
+  rows.forEach(row=>{
+
+    const text =
+    row.innerText
+    .toLowerCase();
+
+    row.style.display =
+
+    text.includes(
+      keyword
+    )
+
+    ? ""
+
+    : "none";
+
+  });
+
+}
+```
