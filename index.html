@@ -1,1 +1,404 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventra | By Ju5t Fun</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  --primary:#2563eb;
+  --primary-dark:#1d4ed8;
+  --primary-light:#dbeafe;
+  --white:#ffffff;
+  --bg:#f8fafc;
+  --text:#0f172a;
+  --text-soft:#64748b;
+  --border:#e2e8f0;
+  --success:#10b981;
+  --danger:#ef4444;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Inter,Segoe UI,sans-serif;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+}
+
+.login-page{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+}
+
+.login-box{
+  width:100%;
+  max-width:420px;
+  background:white;
+  padding:35px;
+  border-radius:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.logo{
+  text-align:center;
+  margin-bottom:25px;
+}
+
+.logo h1{
+  color:var(--primary);
+}
+
+.logo p{
+  color:var(--text-soft);
+}
+
+.input{
+  width:100%;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-top:10px;
+}
+
+.btn{
+  width:100%;
+  border:none;
+  background:var(--primary);
+  color:white;
+  padding:14px;
+  border-radius:12px;
+  margin-top:15px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.btn:hover{
+  background:var(--primary-dark);
+}
+
+.app{
+  display:none;
+}
+
+.sidebar{
+  position:fixed;
+  left:0;
+  top:0;
+  width:260px;
+  height:100vh;
+  background:white;
+  border-right:1px solid var(--border);
+  padding:20px;
+}
+
+.brand{
+  font-size:24px;
+  font-weight:700;
+  color:var(--primary);
+  margin-bottom:25px;
+}
+
+.menu a{
+  display:block;
+  text-decoration:none;
+  color:var(--text);
+  padding:12px;
+  margin-bottom:6px;
+  border-radius:10px;
+}
+
+.menu a:hover{
+  background:var(--primary-light);
+}
+
+.main{
+  margin-left:260px;
+  padding:25px;
+}
+
+.header{
+  background:white;
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+}
+
+.card{
+  background:white;
+  border-radius:18px;
+  padding:20px;
+}
+
+.card h4{
+  color:var(--text-soft);
+  margin-bottom:10px;
+}
+
+.card h1{
+  font-size:32px;
+}
+
+.section{
+  background:white;
+  margin-top:20px;
+  border-radius:18px;
+  padding:20px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+
+table th,
+table td{
+  border-bottom:1px solid var(--border);
+  padding:12px;
+  text-align:left;
+}
+
+.logout{
+  margin-top:25px;
+  background:var(--danger);
+}
+
+@media(max-width:768px){
+
+.sidebar{
+  position:relative;
+  width:100%;
+  height:auto;
+}
+
+.main{
+  margin-left:0;
+}
+
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+
+<div class="login-page" id="loginPage">
+
+  <div class="login-box">
+
+    <div class="logo">
+      <h1>Inventra</h1>
+      <p>Smart Inventory System</p>
+      <small>Developed by Ju5t Fun</small>
+    </div>
+
+    <input type="email" id="email" class="input" placeholder="Email Admin">
+
+    <input type="password" id="password" class="input" placeholder="Password">
+
+    <button class="btn" onclick="login()">
+      Login
+    </button>
+
+    <p id="loginStatus" style="margin-top:10px;color:red;"></p>
+
+  </div>
+
+</div>
+
+<!-- APP -->
+
+<div class="app" id="app">
+
+  <div class="sidebar">
+
+    <div class="brand">
+      Inventra
+    </div>
+
+    <div class="menu">
+      <a href="#">📊 Dashboard</a>
+      <a href="#">📦 Data Barang</a>
+      <a href="#">📥 Barang Masuk</a>
+      <a href="#">📤 Barang Keluar</a>
+      <a href="#">🏭 Supplier</a>
+      <a href="#">📋 Stock Opname</a>
+      <a href="#">📑 Spreadsheet</a>
+      <a href="#">📈 Laporan</a>
+      <a href="#">⚙ Pengaturan</a>
+    </div>
+
+    <button class="btn logout" onclick="logout()">
+      Logout
+    </button>
+
+  </div>
+
+  <div class="main">
+
+    <div class="header">
+      <h2>Dashboard Inventra</h2>
+      <p>Selamat datang Admin</p>
+    </div>
+
+    <div class="cards">
+
+      <div class="card">
+        <h4>Total Barang</h4>
+        <h1 id="totalBarang">0</h1>
+      </div>
+
+      <div class="card">
+        <h4>Barang Masuk</h4>
+        <h1 id="barangMasuk">0</h1>
+      </div>
+
+      <div class="card">
+        <h4>Barang Keluar</h4>
+        <h1 id="barangKeluar">0</h1>
+      </div>
+
+      <div class="card">
+        <h4>Stok Menipis</h4>
+        <h1 id="stokTipis">0</h1>
+      </div>
+
+    </div>
+
+    <div class="section">
+
+      <h3>Data Barang</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Nama</th>
+            <th>Kategori</th>
+            <th>Stok</th>
+          </tr>
+        </thead>
+
+        <tbody id="barangTable"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL = "https://vjjolbymjlqfrakyzmfg.supabase.co";
+const SUPABASE_KEY = "PASTE_ANON_KEY_DISINI";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+async function login(){
+
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  const { error } =
+  await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if(error){
+    document.getElementById("loginStatus").innerText =
+    error.message;
+    return;
+  }
+
+  showApp();
+  loadBarang();
+}
+
+async function logout(){
+
+  await supabaseClient.auth.signOut();
+
+  document.getElementById("app").style.display="none";
+  document.getElementById("loginPage").style.display="flex";
+}
+
+function showApp(){
+
+  document.getElementById("loginPage").style.display="none";
+  document.getElementById("app").style.display="block";
+}
+
+async function loadBarang(){
+
+  const { data, error } =
+  await supabaseClient
+  .from('barang')
+  .select('*');
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  document.getElementById("totalBarang")
+  .innerText = data.length;
+
+  let html = '';
+
+  data.forEach(item=>{
+
+    html += `
+      <tr>
+        <td>${item.kode}</td>
+        <td>${item.nama}</td>
+        <td>${item.kategori || '-'}</td>
+        <td>${item.stok}</td>
+      </tr>
+    `;
+
+  });
+
+  document.getElementById("barangTable").innerHTML = html;
+}
+
+async function checkSession(){
+
+  const {
+    data:{session}
+  } = await supabaseClient.auth.getSession();
+
+  if(session){
+    showApp();
+    loadBarang();
+  }
+}
+
+checkSession();
+
+</script>
+
+</body>
+</html>
