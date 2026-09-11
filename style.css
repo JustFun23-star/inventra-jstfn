@@ -1,0 +1,728 @@
+```css id="j8r4wq"
+/* =========================================
+   INVENTRA PRO
+   Developer : Ju5t Fun
+   File      : style.css
+========================================= */
+
+/* =========================================
+   ROOT COLOR
+========================================= */
+
+:root{
+
+  --primary:#2563eb;
+  --primary-dark:#1d4ed8;
+  --primary-light:#dbeafe;
+
+  --success:#10b981;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+
+  --white:#ffffff;
+
+  --bg:#f8fafc;
+
+  --text:#0f172a;
+  --text-soft:#64748b;
+
+  --border:#e2e8f0;
+
+  --shadow:
+  0 10px 30px rgba(0,0,0,.08);
+
+}
+
+/* =========================================
+   RESET
+========================================= */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+
+  font-family:
+  Inter,
+  Segoe UI,
+  sans-serif;
+
+  background:var(--bg);
+  color:var(--text);
+
+}
+
+/* =========================================
+   HIDDEN
+========================================= */
+
+.hidden{
+  display:none !important;
+}
+
+/* =========================================
+   LOADING SCREEN
+========================================= */
+
+.loading-screen{
+
+  position:fixed;
+  inset:0;
+
+  background:white;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+  z-index:9999;
+
+}
+
+.loader{
+
+  width:60px;
+  height:60px;
+
+  border:5px solid
+  var(--primary-light);
+
+  border-top:
+  5px solid var(--primary);
+
+  border-radius:50%;
+
+  animation:
+  spin 1s linear infinite;
+
+}
+
+@keyframes spin{
+
+  from{
+    transform:rotate(0deg);
+  }
+
+  to{
+    transform:rotate(360deg);
+  }
+
+}
+
+/* =========================================
+   LOGIN PAGE
+========================================= */
+
+.login-page{
+
+  min-height:100vh;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:20px;
+
+}
+
+.login-card{
+
+  width:100%;
+  max-width:450px;
+
+  background:white;
+
+  border-radius:24px;
+
+  padding:40px;
+
+  box-shadow:var(--shadow);
+
+}
+
+.login-logo{
+
+  text-align:center;
+
+  margin-bottom:25px;
+
+}
+
+.login-logo h1{
+
+  color:var(--primary);
+
+  font-size:36px;
+
+}
+
+.login-logo p{
+
+  color:var(--text-soft);
+
+}
+
+.login-form{
+
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+
+}
+
+.login-form input{
+
+  padding:14px;
+
+  border:
+  1px solid var(--border);
+
+  border-radius:12px;
+
+}
+
+.login-form button{
+
+  border:none;
+
+  background:var(--primary);
+
+  color:white;
+
+  padding:14px;
+
+  border-radius:12px;
+
+  cursor:pointer;
+
+  font-weight:600;
+
+}
+
+.login-form button:hover{
+
+  background:var(--primary-dark);
+
+}
+
+#loginStatus{
+
+  color:var(--danger);
+
+  text-align:center;
+
+}
+
+/* =========================================
+   APP LAYOUT
+========================================= */
+
+.app{
+
+  display:flex;
+
+  min-height:100vh;
+
+}
+
+/* =========================================
+   SIDEBAR
+========================================= */
+
+.sidebar{
+
+  width:270px;
+
+  background:white;
+
+  border-right:
+  1px solid var(--border);
+
+  padding:20px;
+
+  position:fixed;
+
+  top:0;
+  left:0;
+  bottom:0;
+
+  overflow-y:auto;
+
+}
+
+.sidebar-logo{
+
+  margin-bottom:25px;
+
+}
+
+.sidebar-logo h2{
+
+  color:var(--primary);
+
+}
+
+.sidebar nav{
+
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+
+}
+
+.sidebar nav button{
+
+  border:none;
+
+  background:transparent;
+
+  text-align:left;
+
+  padding:12px;
+
+  border-radius:12px;
+
+  cursor:pointer;
+
+  transition:.2s;
+
+}
+
+.sidebar nav button:hover{
+
+  background:
+  var(--primary-light);
+
+}
+
+.logout-btn{
+
+  margin-top:20px;
+
+  width:100%;
+
+  border:none;
+
+  padding:12px;
+
+  border-radius:12px;
+
+  cursor:pointer;
+
+  color:white;
+
+  background:var(--danger);
+
+}
+
+/* =========================================
+   CONTENT
+========================================= */
+
+.content{
+
+  flex:1;
+
+  margin-left:270px;
+
+  padding:25px;
+
+}
+
+/* =========================================
+   TOPBAR
+========================================= */
+
+.topbar{
+
+  background:white;
+
+  border-radius:18px;
+
+  padding:20px;
+
+  box-shadow:var(--shadow);
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:20px;
+
+}
+
+.admin-box{
+
+  background:
+  var(--primary-light);
+
+  color:
+  var(--primary);
+
+  padding:10px 15px;
+
+  border-radius:12px;
+
+}
+
+/* =========================================
+   PAGE
+========================================= */
+
+.page{
+
+  animation:
+  fadeIn .25s ease;
+
+}
+
+@keyframes fadeIn{
+
+  from{
+    opacity:0;
+    transform:translateY(10px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+}
+
+/* =========================================
+   DASHBOARD
+========================================= */
+
+.stats-grid{
+
+  display:grid;
+
+  grid-template-columns:
+  repeat(auto-fit,minmax(220px,1fr));
+
+  gap:15px;
+
+  margin-bottom:20px;
+
+}
+
+.stat-card{
+
+  background:white;
+
+  border-radius:18px;
+
+  padding:20px;
+
+  box-shadow:var(--shadow);
+
+}
+
+.stat-card span{
+
+  color:var(--text-soft);
+
+}
+
+.stat-card h2{
+
+  margin-top:10px;
+
+  font-size:32px;
+
+}
+
+.warning{
+
+  border-left:
+  5px solid var(--warning);
+
+}
+
+/* =========================================
+   PANEL
+========================================= */
+
+.panel{
+
+  background:white;
+
+  border-radius:18px;
+
+  padding:20px;
+
+  box-shadow:var(--shadow);
+
+}
+
+.panel-header{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:15px;
+
+}
+
+.panel-header button{
+
+  border:none;
+
+  background:var(--primary);
+
+  color:white;
+
+  padding:12px 18px;
+
+  border-radius:12px;
+
+  cursor:pointer;
+
+}
+
+/* =========================================
+   FORM
+========================================= */
+
+input,
+select,
+textarea{
+
+  width:100%;
+
+  padding:12px;
+
+  margin-top:10px;
+
+  border:
+  1px solid var(--border);
+
+  border-radius:12px;
+
+  outline:none;
+
+}
+
+form button{
+
+  margin-top:12px;
+
+  border:none;
+
+  background:var(--primary);
+
+  color:white;
+
+  padding:12px 16px;
+
+  border-radius:12px;
+
+  cursor:pointer;
+
+}
+
+/* =========================================
+   SEARCH
+========================================= */
+
+.search-box{
+
+  margin-bottom:15px;
+
+}
+
+/* =========================================
+   TABLE
+========================================= */
+
+table{
+
+  width:100%;
+
+  border-collapse:collapse;
+
+}
+
+table th{
+
+  background:
+  var(--primary-light);
+
+  color:
+  var(--primary);
+
+}
+
+table th,
+table td{
+
+  padding:14px;
+
+  border-bottom:
+  1px solid var(--border);
+
+  text-align:left;
+
+}
+
+table tr:hover{
+
+  background:#f9fbff;
+
+}
+
+/* =========================================
+   MODAL
+========================================= */
+
+.modal{
+
+  position:fixed;
+
+  inset:0;
+
+  background:
+  rgba(0,0,0,.45);
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  z-index:999;
+
+}
+
+.modal-content{
+
+  background:white;
+
+  width:100%;
+  max-width:500px;
+
+  padding:25px;
+
+  border-radius:18px;
+
+}
+
+.modal-actions{
+
+  display:flex;
+
+  gap:10px;
+
+  margin-top:15px;
+
+}
+
+.modal-actions button{
+
+  flex:1;
+
+  border:none;
+
+  padding:12px;
+
+  border-radius:12px;
+
+  cursor:pointer;
+
+}
+
+/* =========================================
+   TOAST
+========================================= */
+
+.toast{
+
+  position:fixed;
+
+  right:20px;
+  bottom:20px;
+
+  background:
+  var(--success);
+
+  color:white;
+
+  padding:15px 20px;
+
+  border-radius:12px;
+
+  opacity:0;
+
+  pointer-events:none;
+
+  transition:.3s;
+
+}
+
+.toast.show{
+
+  opacity:1;
+
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media(max-width:900px){
+
+  .sidebar{
+
+    position:relative;
+
+    width:100%;
+
+    height:auto;
+
+  }
+
+  .content{
+
+    margin-left:0;
+
+  }
+
+  .app{
+
+    flex-direction:column;
+
+  }
+
+  .topbar{
+
+    flex-direction:column;
+    gap:10px;
+
+    align-items:flex-start;
+
+  }
+
+  .panel-header{
+
+    flex-direction:column;
+    align-items:stretch;
+
+    gap:10px;
+
+  }
+
+}
+```
