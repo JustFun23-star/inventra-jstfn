@@ -13,7 +13,7 @@
 ========================================================= */
 
 const SUPABASE_URL =
-  "https://vjjolbymjlqfrakyzmfg.supabase.co/rest/v1/";
+  "https://vjjolbymjlqfrakyzmfg.supabase.co";
 
 const SUPABASE_KEY =
   "sb_publishable_NyMM71sPiFnkRaji81-GRw_D73E7zsh";
