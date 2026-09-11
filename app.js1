@@ -1,0 +1,368 @@
+```javascript
+/* =========================================
+   INVENTRA PRO
+   Developer : Ju5t Fun
+   File      : app.js
+========================================= */
+
+/* =========================================
+   KONFIGURASI SUPABASE
+========================================= */
+
+const SUPABASE_URL =
+"YOUR_SUPABASE_URL";
+
+const SUPABASE_KEY =
+"YOUR_SUPABASE_ANON_KEY";
+
+const supabaseClient =
+supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+/* =========================================
+   GLOBAL VARIABLE
+========================================= */
+
+let barangEditId = null;
+let supplierEditId = null;
+
+/* =========================================
+   LOADING SCREEN
+========================================= */
+
+window.addEventListener(
+"load",
+()=>{
+
+  setTimeout(()=>{
+
+    document
+    .getElementById(
+      "loadingScreen"
+    )
+    .style.display="none";
+
+  },800);
+
+});
+
+/* =========================================
+   TOAST NOTIFICATION
+========================================= */
+
+function showToast(message){
+
+  const toast =
+  document.getElementById(
+    "toast"
+  );
+
+  toast.innerText = message;
+
+  toast.classList.add(
+    "show"
+  );
+
+  setTimeout(()=>{
+
+    toast.classList.remove(
+      "show"
+    );
+
+  },3000);
+
+}
+
+/* =========================================
+   LOGIN ADMIN
+========================================= */
+
+async function loginAdmin(){
+
+  const email =
+  document.getElementById(
+    "loginEmail"
+  ).value;
+
+  const password =
+  document.getElementById(
+    "loginPassword"
+  ).value;
+
+  const { error } =
+  await supabaseClient
+  .auth
+  .signInWithPassword({
+
+    email,
+    password
+
+  });
+
+  if(error){
+
+    document
+    .getElementById(
+      "loginStatus"
+    )
+    .innerText =
+    error.message;
+
+    return;
+
+  }
+
+  document
+  .getElementById(
+    "loginPage"
+  )
+  .classList.add(
+    "hidden"
+  );
+
+  document
+  .getElementById(
+    "app"
+  )
+  .classList.remove(
+    "hidden"
+  );
+
+  await initApp();
+
+}
+
+/* =========================================
+   LOGOUT ADMIN
+========================================= */
+
+async function logoutAdmin(){
+
+  await supabaseClient
+  .auth
+  .signOut();
+
+  location.reload();
+
+}
+
+/* =========================================
+   CHECK SESSION
+========================================= */
+
+async function checkSession(){
+
+  const {
+
+    data:{
+      session
+    }
+
+  } = await supabaseClient
+  .auth
+  .getSession();
+
+  if(session){
+
+    document
+    .getElementById(
+      "loginPage"
+    )
+    .classList.add(
+      "hidden"
+    );
+
+    document
+    .getElementById(
+      "app"
+    )
+    .classList.remove(
+      "hidden"
+    );
+
+    await initApp();
+
+  }
+
+}
+
+checkSession();
+
+/* =========================================
+   NAVIGASI SPA
+========================================= */
+
+function showPage(pageId){
+
+  document
+  .querySelectorAll(".page")
+  .forEach(page=>{
+
+    page.classList.add(
+      "hidden"
+    );
+
+  });
+
+  document
+  .getElementById(
+    pageId
+  )
+  .classList.remove(
+    "hidden"
+  );
+
+}
+
+/* =========================================
+   INISIALISASI APLIKASI
+========================================= */
+
+async function initApp(){
+
+  await loadDashboard();
+
+  await loadBarang();
+
+  await loadSupplier();
+
+  await loadBarangMasuk();
+
+  await loadBarangKeluar();
+
+  await loadActivity();
+
+  await loadSelectBarang();
+
+}
+
+/* =========================================
+   DASHBOARD
+========================================= */
+
+async function loadDashboard(){
+
+  const {
+
+    data:barang
+
+  } = await supabaseClient
+
+  .from("barang")
+
+  .select("*");
+
+  const {
+
+    data:masuk
+
+  } = await supabaseClient
+
+  .from("barang_masuk")
+
+  .select("*");
+
+  const {
+
+    data:keluar
+
+  } = await supabaseClient
+
+  .from("barang_keluar")
+
+  .select("*");
+
+  const totalBarang =
+  barang.length;
+
+  const totalStok =
+  barang.reduce(
+
+    (sum,item)=>
+
+    sum + item.stok,
+
+    0
+
+  );
+
+  const stokMenipis =
+  barang.filter(
+
+    item=>
+
+    item.stok <=
+    item.stok_minimum
+
+  ).length;
+
+  document
+  .getElementById(
+    "totalBarang"
+  )
+  .innerText =
+  totalBarang;
+
+  document
+  .getElementById(
+    "totalStok"
+  )
+  .innerText =
+  totalStok;
+
+  document
+  .getElementById(
+    "totalMasuk"
+  )
+  .innerText =
+  masuk.length;
+
+  document
+  .getElementById(
+    "totalKeluar"
+  )
+  .innerText =
+  keluar.length;
+
+  document
+  .getElementById(
+    "stokMenipis"
+  )
+  .innerText =
+  stokMenipis;
+
+  let html = "";
+
+  barang
+  .slice(0,10)
+  .forEach(item=>{
+
+    html += `
+
+      <tr>
+
+        <td>${item.kode}</td>
+
+        <td>${item.nama}</td>
+
+        <td>${item.kategori || '-'}</td>
+
+        <td>${item.stok}</td>
+
+      </tr>
+
+    `;
+
+  });
+
+  document
+  .getElementById(
+    "dashboardBarang"
+  )
+  .innerHTML =
+  html;
+
+}
+```
