@@ -1,8 +1,10 @@
+```javascript
 /* =========================================================
    INVENTRA PRO
    Developer : Ju5t Fun
    File      : app.js
    Version   : Production v1.0
+   Compatible dengan HTML Inventra Pro yang Anda kirim
 ========================================================= */
 
 
@@ -16,6 +18,24 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "YOUR_SUPABASE_ANON_KEY";
 
+
+/* =========================================================
+   CEK LIBRARY SUPABASE
+========================================================= */
+
+if (
+  typeof supabase === "undefined"
+) {
+  console.error(
+    "Supabase library belum dimuat."
+  );
+}
+
+
+/* =========================================================
+   SUPABASE CLIENT
+========================================================= */
+
 const supabaseClient =
   supabase.createClient(
     SUPABASE_URL,
@@ -28,179 +48,184 @@ const supabaseClient =
 ========================================================= */
 
 let barangEditId = null;
+
 let supplierEditId = null;
 
 let autoRefreshTimer = null;
 
+let appInitialized = false;
+
 let isSavingBarang = false;
+
 let isSavingSupplier = false;
+
 let isSavingTransaksi = false;
+
 let isSavingOpname = false;
+
+let toastTimer = null;
 
 
 /* =========================================================
-   3. BASIC UTILITIES
+   3. UTILITY
 ========================================================= */
 
-function getValue(id){
+function getElement(id) {
 
-  const el =
-    document.getElementById(id);
+  return document.getElementById(id);
 
-  if(!el){
+}
+
+
+function getValue(id) {
+
+  const element =
+    getElement(id);
+
+  if (!element) {
     return "";
   }
 
   return String(
-    el.value ?? ""
+    element.value ?? ""
   ).trim();
+
 }
 
 
-function setValue(id,value){
+function setValue(
+  id,
+  value
+) {
 
-  const el =
-    document.getElementById(id);
+  const element =
+    getElement(id);
 
-  if(el){
-    el.value = value ?? "";
+  if (element) {
+    element.value =
+      value ?? "";
   }
 
 }
 
 
-function escapeHTML(value){
+function setText(
+  id,
+  value
+) {
 
-  return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+  const element =
+    getElement(id);
+
+  if (element) {
+    element.innerText =
+      value ?? "";
+  }
 
 }
 
 
-function formatDate(value){
+function escapeHTML(value) {
 
-  if(!value){
+  return String(
+    value ?? ""
+  )
+  .replace(
+    /&/g,
+    "&amp;"
+  )
+  .replace(
+    /</g,
+    "&lt;"
+  )
+  .replace(
+    />/g,
+    "&gt;"
+  )
+  .replace(
+    /"/g,
+    "&quot;"
+  )
+  .replace(
+    /'/g,
+    "&#039;"
+  );
+
+}
+
+
+function formatDate(value) {
+
+  if (!value) {
     return "-";
   }
 
   const date =
     new Date(value);
 
-  if(
+  if (
     Number.isNaN(
       date.getTime()
     )
-  ){
+  ) {
     return "-";
   }
 
   return date.toLocaleString(
     "id-ID",
     {
-      dateStyle:"medium",
-      timeStyle:"short"
+      dateStyle: "medium",
+      timeStyle: "short"
     }
   );
 
 }
 
 
-function getTodayString(){
+function getTodayString() {
 
-  const now =
+  const date =
     new Date();
 
   const year =
-    now.getFullYear();
+    date.getFullYear();
 
   const month =
     String(
-      now.getMonth()+1
-    ).padStart(2,"0");
+      date.getMonth() + 1
+    ).padStart(2, "0");
 
   const day =
     String(
-      now.getDate()
-    ).padStart(2,"0");
+      date.getDate()
+    ).padStart(2, "0");
 
-  return `${year}-${month}-${day}`;
-
-}
-
-
-function debounce(
-  callback,
-  delay = 300
-){
-
-  let timer = null;
-
-  return function(...args){
-
-    clearTimeout(timer);
-
-    timer =
-      setTimeout(
-        ()=>{
-          callback.apply(
-            this,
-            args
-          );
-        },
-        delay
-      );
-
-  };
+  return (
+    year +
+    "-" +
+    month +
+    "-" +
+    day
+  );
 
 }
 
 
-function setButtonLoading(
-  buttonId,
-  loading,
-  loadingText = "Menyimpan..."
-){
+function numberValue(
+  value,
+  fallback = 0
+) {
 
-  const button =
-    document.getElementById(
-      buttonId
-    );
+  const number =
+    Number(value);
 
-  if(!button){
-    return;
+  if (
+    !Number.isFinite(number)
+  ) {
+    return fallback;
   }
 
-  if(loading){
-
-    if(
-      !button.dataset.originalText
-    ){
-
-      button.dataset.originalText =
-        button.innerHTML;
-
-    }
-
-    button.disabled = true;
-
-    button.innerHTML =
-      loadingText;
-
-  }else{
-
-    button.disabled = false;
-
-    button.innerHTML =
-      button.dataset.originalText ||
-      "Simpan";
-
-    delete button.dataset.originalText;
-
-  }
+  return number;
 
 }
 
@@ -209,16 +234,12 @@ function setButtonLoading(
    4. TOAST
 ========================================================= */
 
-let toastTimer = null;
-
-function showToast(message){
+function showToast(message) {
 
   const toast =
-    document.getElementById(
-      "toast"
-    );
+    getElement("toast");
 
-  if(!toast){
+  if (!toast) {
 
     console.log(
       message
@@ -241,7 +262,7 @@ function showToast(message){
 
   toastTimer =
     setTimeout(
-      ()=>{
+      () => {
 
         toast.classList.remove(
           "show"
@@ -258,82 +279,78 @@ function showToast(message){
    5. LOADING SCREEN
 ========================================================= */
 
-window.addEventListener(
-  "load",
-  ()=>{
+function hideLoadingScreen() {
 
-    const loading =
-      document.getElementById(
-        "loadingScreen"
-      );
-
-    if(!loading){
-      return;
-    }
-
-    setTimeout(
-      ()=>{
-
-        loading.style.display =
-          "none";
-
-      },
-      500
+  const loading =
+    getElement(
+      "loadingScreen"
     );
 
+  if (!loading) {
+    return;
   }
-);
+
+  loading.style.display =
+    "none";
+
+}
 
 
 /* =========================================================
    6. LOGIN
 ========================================================= */
 
-async function loginAdmin(){
+async function loginAdmin() {
 
   const email =
     getValue(
       "loginEmail"
     );
 
-  const password =
-    document.getElementById(
+  const passwordElement =
+    getElement(
       "loginPassword"
-    )?.value || "";
+    );
+
+  const password =
+    passwordElement
+      ? passwordElement.value
+      : "";
 
 
-  if(!email || !password){
+  if (
+    !email ||
+    !password
+  ) {
 
-    const status =
-      document.getElementById(
-        "loginStatus"
-      );
-
-    if(status){
-      status.innerText =
-        "Email dan password wajib diisi";
-    }
+    setText(
+      "loginStatus",
+      "Email dan password wajib diisi"
+    );
 
     return;
 
   }
 
 
-  const loginButton =
-    document.getElementById(
-      "btnLogin"
+  const button =
+    document.querySelector(
+      "#loginPage button"
     );
 
-  if(loginButton){
 
-    loginButton.disabled = true;
-    loginButton.innerText =
+  if (button) {
+
+    button.disabled =
+      true;
+
+    button.innerText =
       "Memproses...";
 
   }
 
 
-  try{
+  try {
 
     const {
       error
@@ -348,62 +365,47 @@ async function loginAdmin(){
       });
 
 
-    if(error){
+    if (error) {
 
-      const status =
-        document.getElementById(
-          "loginStatus"
-        );
-
-      if(status){
-        status.innerText =
-          error.message;
-      }
+      setText(
+        "loginStatus",
+        error.message
+      );
 
       return;
 
     }
 
 
-    const status =
-      document.getElementById(
-        "loginStatus"
-      );
-
-    if(status){
-      status.innerText = "";
-    }
+    setText(
+      "loginStatus",
+      ""
+    );
 
 
     await showApplication();
 
-  }catch(error){
+
+  } catch (error) {
 
     console.error(
       "Login error:",
       error
     );
 
-    const status =
-      document.getElementById(
-        "loginStatus"
-      );
+    setText(
+      "loginStatus",
+      "Login gagal. Silakan coba lagi."
+    );
 
-    if(status){
+  } finally {
 
-      status.innerText =
-        "Login gagal. Silakan coba lagi.";
+    if (button) {
 
-    }
-
-  }finally{
-
-    if(loginButton){
-
-      loginButton.disabled =
+      button.disabled =
         false;
 
-      loginButton.innerText =
+      button.innerText =
         "Login";
 
     }
@@ -417,13 +419,24 @@ async function loginAdmin(){
    7. LOGOUT
 ========================================================= */
 
-async function logoutAdmin(){
+async function logoutAdmin() {
 
   stopAutoRefresh();
 
-  await supabaseClient
-    .auth
-    .signOut();
+  try {
+
+    await supabaseClient
+      .auth
+      .signOut();
+
+  } catch (error) {
+
+    console.error(
+      "Logout:",
+      error
+    );
+
+  }
 
   location.reload();
 
@@ -434,9 +447,9 @@ async function logoutAdmin(){
    8. SESSION
 ========================================================= */
 
-async function checkSession(){
+async function checkSession() {
 
-  try{
+  try {
 
     const {
       data,
@@ -447,7 +460,7 @@ async function checkSession(){
       .getSession();
 
 
-    if(error){
+    if (error) {
 
       console.error(
         "Session error:",
@@ -459,13 +472,16 @@ async function checkSession(){
     }
 
 
-    if(data?.session){
+    if (
+      data &&
+      data.session
+    ) {
 
       await showApplication();
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Check session:",
@@ -477,20 +493,24 @@ async function checkSession(){
 }
 
 
-async function showApplication(){
+/* =========================================================
+   9. SHOW APPLICATION
+========================================================= */
+
+async function showApplication() {
 
   const loginPage =
-    document.getElementById(
+    getElement(
       "loginPage"
     );
 
   const app =
-    document.getElementById(
+    getElement(
       "app"
     );
 
 
-  if(loginPage){
+  if (loginPage) {
 
     loginPage.classList.add(
       "hidden"
@@ -499,7 +519,7 @@ async function showApplication(){
   }
 
 
-  if(app){
+  if (app) {
 
     app.classList.remove(
       "hidden"
@@ -514,15 +534,17 @@ async function showApplication(){
 
 
 /* =========================================================
-   9. SPA NAVIGATION
+   10. SPA NAVIGATION
 ========================================================= */
 
-function showPage(pageId){
+function showPage(pageId) {
 
   document
-    .querySelectorAll(".page")
+    .querySelectorAll(
+      ".page"
+    )
     .forEach(
-      page=>{
+      page => {
 
         page.classList.add(
           "hidden"
@@ -533,12 +555,10 @@ function showPage(pageId){
 
 
   const target =
-    document.getElementById(
-      pageId
-    );
+    getElement(pageId);
 
 
-  if(target){
+  if (target) {
 
     target.classList.remove(
       "hidden"
@@ -546,35 +566,92 @@ function showPage(pageId){
 
   }
 
+
+  updatePageTitle(
+    pageId
+  );
+
+}
+
+
+function updatePageTitle(
+  pageId
+) {
+
+  const titles = {
+
+    dashboardPage:
+      "Dashboard",
+
+    barangPage:
+      "Data Barang",
+
+    barangMasukPage:
+      "Barang Masuk",
+
+    barangKeluarPage:
+      "Barang Keluar",
+
+    supplierPage:
+      "Supplier",
+
+    spreadsheetPage:
+      "Spreadsheet",
+
+    stockPage:
+      "Stock Opname",
+
+    activityPage:
+      "Activity Log",
+
+    settingPage:
+      "Pengaturan"
+
+  };
+
+
+  setText(
+    "pageTitle",
+    titles[pageId] ||
+    "Inventra Pro"
+  );
+
 }
 
 
 /* =========================================================
-   10. INITIALIZE APP
+   11. INITIALIZE APPLICATION
 ========================================================= */
 
-let appInitialized = false;
+async function initApp() {
 
+  if (appInitialized) {
 
-async function initApp(){
-
-  if(appInitialized){
-
-    await refreshAllData();
+    await loadDashboard();
 
     return;
 
   }
 
 
-  appInitialized = true;
+  appInitialized =
+    true;
 
 
-  try{
+  try {
 
     /*
-      Jalankan request independen
-      secara bersamaan.
+      Form Stock Opname dibuat
+      otomatis karena HTML asli
+      belum memiliki form-nya.
+    */
+
+    createStockOpnameForm();
+
+
+    /*
+      Load data secara paralel
+      supaya lebih cepat.
     */
 
     await Promise.allSettled([
@@ -583,11 +660,11 @@ async function initApp(){
 
       loadBarang(),
 
-      loadSupplier(),
-
       loadBarangMasuk(),
 
       loadBarangKeluar(),
+
+      loadSupplier(),
 
       loadActivity(),
 
@@ -603,10 +680,10 @@ async function initApp(){
     startAutoRefresh();
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
-      "Init app:",
+      "Init application:",
       error
     );
 
@@ -616,12 +693,12 @@ async function initApp(){
 
 
 /* =========================================================
-   11. DASHBOARD
+   12. DASHBOARD
 ========================================================= */
 
-async function loadDashboard(){
+async function loadDashboard() {
 
-  try{
+  try {
 
     const [
       barangResult,
@@ -647,15 +724,15 @@ async function loadDashboard(){
       ]);
 
 
-    if(barangResult.error){
+    if (barangResult.error) {
       throw barangResult.error;
     }
 
-    if(masukResult.error){
+    if (masukResult.error) {
       throw masukResult.error;
     }
 
-    if(keluarResult.error){
+    if (keluarResult.error) {
       throw keluarResult.error;
     }
 
@@ -676,20 +753,43 @@ async function loadDashboard(){
 
     const totalStok =
       barang.reduce(
-        (sum,item)=>
-          sum +
-          Number(item.stok || 0),
+        (
+          total,
+          item
+        ) => {
+
+          return (
+            total +
+            numberValue(
+              item.stok
+            )
+          );
+
+        },
         0
       );
 
 
     const stokMenipis =
       barang.filter(
-        item=>
-          Number(item.stok || 0) <=
-          Number(
-            item.stok_minimum || 0
-          )
+        item => {
+
+          const stok =
+            numberValue(
+              item.stok
+            );
+
+          const minimum =
+            numberValue(
+              item.stok_minimum
+            );
+
+          return (
+            stok <=
+            minimum
+          );
+
+        }
       ).length;
 
 
@@ -723,39 +823,40 @@ async function loadDashboard(){
 
 
     barang
-      .slice(0,10)
+      .slice(0, 10)
       .forEach(
-        item=>{
+        item => {
 
           html += `
 
-          <tr>
+            <tr>
 
-            <td>
-              ${escapeHTML(
-                item.kode
-              )}
-            </td>
+              <td>
+                ${escapeHTML(
+                  item.kode
+                )}
+              </td>
 
-            <td>
-              ${escapeHTML(
-                item.nama
-              )}
-            </td>
+              <td>
+                ${escapeHTML(
+                  item.nama
+                )}
+              </td>
 
-            <td>
-              ${escapeHTML(
-                item.kategori || "-"
-              )}
-            </td>
+              <td>
+                ${escapeHTML(
+                  item.kategori ||
+                  "-"
+                )}
+              </td>
 
-            <td>
-              ${Number(
-                item.stok || 0
-              )}
-            </td>
+              <td>
+                ${numberValue(
+                  item.stok
+                )}
+              </td>
 
-          </tr>
+            </tr>
 
           `;
 
@@ -764,19 +865,19 @@ async function loadDashboard(){
 
 
     const table =
-      document.getElementById(
+      getElement(
         "dashboardBarang"
       );
 
 
-    if(table){
+    if (table) {
 
       table.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Dashboard:",
@@ -788,44 +889,19 @@ async function loadDashboard(){
 }
 
 
-function setText(
-  id,
-  value
-){
-
-  const element =
-    document.getElementById(
-      id
-    );
-
-  if(element){
-
-    element.innerText =
-      value;
-
-  }
-
-}
-
-
 /* =========================================================
-   12. BARANG MODAL
+   13. BARANG MODAL
 ========================================================= */
 
-function openBarangModal(){
-
-  /*
-    PENTING:
-    Jangan reset barangEditId di sini.
-    Karena fungsi ini juga dipanggil ketika EDIT.
-  */
+function openBarangModal() {
 
   const modal =
-    document.getElementById(
+    getElement(
       "barangModal"
     );
 
-  if(modal){
+
+  if (modal) {
 
     modal.classList.remove(
       "hidden"
@@ -836,14 +912,15 @@ function openBarangModal(){
 }
 
 
-function closeBarangModal(){
+function closeBarangModal() {
 
   const modal =
-    document.getElementById(
+    getElement(
       "barangModal"
     );
 
-  if(modal){
+
+  if (modal) {
 
     modal.classList.add(
       "hidden"
@@ -855,48 +932,42 @@ function closeBarangModal(){
 
 
 /* =========================================================
-   13. LOAD BARANG
+   14. LOAD BARANG
 ========================================================= */
 
-async function loadBarang(){
+async function loadBarang() {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("barang")
-
-      .select(
-        "*"
-      )
-
+      .select("*")
       .order(
         "id",
         {
-          ascending:false
+          ascending: false
         }
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
     let html = "";
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          html += `
+        html += `
 
           <tr>
 
@@ -914,76 +985,77 @@ async function loadBarang(){
 
             <td>
               ${escapeHTML(
-                item.kategori || "-"
+                item.kategori ||
+                "-"
               )}
             </td>
 
             <td>
               ${escapeHTML(
-                item.supplier || "-"
+                item.supplier ||
+                "-"
               )}
             </td>
 
             <td>
               ${escapeHTML(
-                item.rak || "-"
+                item.rak ||
+                "-"
               )}
             </td>
 
             <td>
-              ${Number(
-                item.stok || 0
+              ${numberValue(
+                item.stok
               )}
             </td>
 
             <td>
-              ${Number(
-                item.stok_minimum || 0
+              ${numberValue(
+                item.stok_minimum
               )}
             </td>
 
             <td>
 
               <button
-              type="button"
-              onclick="editBarang(${item.id})">
-
+                type="button"
+                onclick="editBarang(${item.id})"
+              >
                 Edit
-
               </button>
 
               <button
-              type="button"
-              onclick="hapusBarang(${item.id})">
-
+                type="button"
+                onclick="hapusBarang(${item.id})"
+              >
                 Hapus
-
               </button>
 
             </td>
 
           </tr>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
 
     const table =
-      document.getElementById(
+      getElement(
         "barangTable"
       );
 
 
-    if(table){
+    if (table) {
 
       table.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Load barang:",
@@ -996,15 +1068,13 @@ async function loadBarang(){
 
 
 /* =========================================================
-   14. SAVE BARANG
+   15. SAVE BARANG
 ========================================================= */
 
-async function saveBarang(){
+async function saveBarang() {
 
-  if(isSavingBarang){
-
+  if (isSavingBarang) {
     return;
-
   }
 
 
@@ -1033,30 +1103,22 @@ async function saveBarang(){
       "barangRak"
     );
 
-
-  const stokValue =
-    getValue(
-      "barangStok"
-    );
-
-  const minimumValue =
-    getValue(
-      "barangMinimum"
-    );
-
-
   const stok =
     Number(
-      stokValue || 0
+      getValue(
+        "barangStok"
+      ) || 0
     );
 
   const minimum =
     Number(
-      minimumValue || 0
+      getValue(
+        "barangMinimum"
+      ) || 0
     );
 
 
-  if(!kode || !nama){
+  if (!kode || !nama) {
 
     showToast(
       "Kode dan Nama wajib diisi"
@@ -1067,10 +1129,10 @@ async function saveBarang(){
   }
 
 
-  if(
+  if (
     !Number.isInteger(stok) ||
     stok < 0
-  ){
+  ) {
 
     showToast(
       "Stok tidak valid"
@@ -1081,10 +1143,12 @@ async function saveBarang(){
   }
 
 
-  if(
-    !Number.isInteger(minimum) ||
+  if (
+    !Number.isInteger(
+      minimum
+    ) ||
     minimum < 0
-  ){
+  ) {
 
     showToast(
       "Stok minimum tidak valid"
@@ -1095,53 +1159,50 @@ async function saveBarang(){
   }
 
 
-  isSavingBarang = true;
+  isSavingBarang =
+    true;
 
 
-  setButtonLoading(
-    "btnSaveBarang",
-    true
-  );
-
-
-  try{
+  try {
 
     const payload = {
 
       kode,
+
       nama,
+
       kategori,
+
       supplier,
+
       rak,
+
       stok,
-      stok_minimum:minimum
+
+      stok_minimum:
+        minimum
 
     };
 
 
-    if(barangEditId){
+    if (barangEditId) {
 
       const {
         error
       } =
         await supabaseClient
-
         .from("barang")
-
         .update(
           payload
         )
-
         .eq(
           "id",
           barangEditId
         );
 
 
-      if(error){
-
+      if (error) {
         throw error;
-
       }
 
 
@@ -1155,24 +1216,20 @@ async function saveBarang(){
       );
 
 
-    }else{
+    } else {
 
       const {
         error
       } =
         await supabaseClient
-
         .from("barang")
-
         .insert([
           payload
         ]);
 
 
-      if(error){
-
+      if (error) {
         throw error;
-
       }
 
 
@@ -1192,13 +1249,6 @@ async function saveBarang(){
 
     closeBarangModal();
 
-    barangEditId =
-      null;
-
-
-    /*
-      Reload hanya yang memang berubah.
-    */
 
     await Promise.all([
 
@@ -1213,7 +1263,7 @@ async function saveBarang(){
     ]);
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Save barang:",
@@ -1225,15 +1275,10 @@ async function saveBarang(){
       "Gagal menyimpan barang"
     );
 
-  }finally{
+  } finally {
 
     isSavingBarang =
       false;
-
-    setButtonLoading(
-      "btnSaveBarang",
-      false
-    );
 
   }
 
@@ -1241,39 +1286,33 @@ async function saveBarang(){
 
 
 /* =========================================================
-   15. EDIT BARANG
+   16. EDIT BARANG
 ========================================================= */
 
-async function editBarang(id){
+async function editBarang(id) {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("barang")
-
       .select("*")
-
       .eq(
         "id",
         id
       )
-
       .single();
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
-    if(!data){
+    if (!data) {
 
       showToast(
         "Barang tidak ditemukan"
@@ -1285,7 +1324,9 @@ async function editBarang(id){
 
 
     /*
-      ID disimpan SEBELUM membuka modal.
+      PENTING:
+      ID disimpan sebelum modal dibuka.
+      openBarangModal tidak mereset ID.
     */
 
     barangEditId =
@@ -1304,34 +1345,39 @@ async function editBarang(id){
 
     setValue(
       "barangKategori",
-      data.kategori || ""
+      data.kategori ||
+      ""
     );
 
     setValue(
       "barangSupplier",
-      data.supplier || ""
+      data.supplier ||
+      ""
     );
 
     setValue(
       "barangRak",
-      data.rak || ""
+      data.rak ||
+      ""
     );
 
     setValue(
       "barangStok",
-      data.stok ?? 0
+      data.stok ??
+      0
     );
 
     setValue(
       "barangMinimum",
-      data.stok_minimum ?? 0
+      data.stok_minimum ??
+      0
     );
 
 
     openBarangModal();
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Edit barang:",
@@ -1349,40 +1395,36 @@ async function editBarang(id){
 
 
 /* =========================================================
-   16. DELETE BARANG
+   17. DELETE BARANG
 ========================================================= */
 
-async function hapusBarang(id){
+async function hapusBarang(id) {
 
-  if(
+  if (
     !confirm(
       "Yakin ingin menghapus barang ini?"
     )
-  ){
+  ) {
 
     return;
 
   }
 
 
-  try{
+  try {
 
     const {
-      data:barang
+      data: barang
     } =
       await supabaseClient
-
       .from("barang")
-
       .select(
         "nama"
       )
-
       .eq(
         "id",
         id
       )
-
       .single();
 
 
@@ -1390,21 +1432,16 @@ async function hapusBarang(id){
       error
     } =
       await supabaseClient
-
       .from("barang")
-
       .delete()
-
       .eq(
         "id",
         id
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
@@ -1434,7 +1471,7 @@ async function hapusBarang(id){
     ]);
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Delete barang:",
@@ -1452,10 +1489,10 @@ async function hapusBarang(id){
 
 
 /* =========================================================
-   17. CLEAR BARANG FORM
+   18. CLEAR BARANG
 ========================================================= */
 
-function clearBarangForm(){
+function clearBarangForm() {
 
   setValue(
     "barangKode",
@@ -1489,8 +1526,9 @@ function clearBarangForm(){
 
   setValue(
     "barangMinimum",
-    "" 
+    ""
   );
+
 
   barangEditId =
     null;
@@ -1499,15 +1537,16 @@ function clearBarangForm(){
 
 
 /* =========================================================
-   18. SEARCH BARANG
+   19. SEARCH BARANG
 ========================================================= */
 
-function searchBarang(){
+function searchBarang() {
 
   const keyword =
     getValue(
       "searchBarang"
-    ).toLowerCase();
+    )
+    .toLowerCase();
 
 
   document
@@ -1515,12 +1554,17 @@ function searchBarang(){
       "#barangTable tr"
     )
     .forEach(
-      row=>{
+      row => {
+
+        const text =
+          row.innerText
+          .toLowerCase();
+
 
         row.style.display =
-          row.innerText
-          .toLowerCase()
-          .includes(keyword)
+          text.includes(
+            keyword
+          )
           ? ""
           : "none";
 
@@ -1531,95 +1575,98 @@ function searchBarang(){
 
 
 /* =========================================================
-   19. LOAD SELECT BARANG
+   20. LOAD SELECT BARANG
 ========================================================= */
 
-async function loadSelectBarang(){
+async function loadSelectBarang() {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("barang")
-
       .select(
         "id,nama,stok"
       )
-
       .order(
         "nama",
         {
-          ascending:true
+          ascending: true
         }
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
-    let option =
-      `<option value="">
+    let options =
+      `
+      <option value="">
         Pilih Barang
-      </option>`;
+      </option>
+      `;
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          option += `
+        options += `
 
-          <option value="${item.id}">
-
+          <option
+            value="${item.id}"
+          >
             ${escapeHTML(
               item.nama
             )}
-            (${Number(
-              item.stok || 0
+            (${numberValue(
+              item.stok
             )})
-
           </option>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
 
     const masuk =
-      document.getElementById(
+      getElement(
         "masukBarang"
       );
 
     const keluar =
-      document.getElementById(
+      getElement(
         "keluarBarang"
       );
 
 
-    if(masuk){
+    if (masuk) {
+
       masuk.innerHTML =
-        option;
+        options;
+
     }
 
-    if(keluar){
+
+    if (keluar) {
+
       keluar.innerHTML =
-        option;
+        options;
+
     }
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
-      "Select barang:",
+      "Load select barang:",
       error
     );
 
@@ -1629,26 +1676,26 @@ async function loadSelectBarang(){
 
 
 /* =========================================================
-   20. BARANG MASUK FORM
+   21. BARANG MASUK FORM
 ========================================================= */
 
-function setupFormMasuk(){
+function setupFormMasuk() {
 
   const form =
-    document.getElementById(
+    getElement(
       "formMasuk"
     );
 
 
-  if(!form){
+  if (!form) {
     return;
   }
 
 
-  if(
+  if (
     form.dataset.initialized ===
     "true"
-  ){
+  ) {
 
     return;
 
@@ -1661,7 +1708,7 @@ function setupFormMasuk(){
 
   form.addEventListener(
     "submit",
-    async event=>{
+    async event => {
 
       event.preventDefault();
 
@@ -1688,12 +1735,12 @@ function setupFormMasuk(){
         );
 
 
-      if(
+      if (
         !Number.isInteger(
           barangId
         ) ||
         barangId <= 0
-      ){
+      ) {
 
         showToast(
           "Pilih barang"
@@ -1704,10 +1751,10 @@ function setupFormMasuk(){
       }
 
 
-      if(
+      if (
         !Number.isInteger(qty) ||
         qty <= 0
-      ){
+      ) {
 
         showToast(
           "Jumlah barang tidak valid"
@@ -1731,19 +1778,17 @@ function setupFormMasuk(){
 
 
 /* =========================================================
-   21. SIMPAN BARANG MASUK
+   22. SIMPAN BARANG MASUK
 ========================================================= */
 
 async function simpanBarangMasuk(
   barangId,
   qty,
   keterangan
-){
+) {
 
-  if(isSavingTransaksi){
-
+  if (isSavingTransaksi) {
     return;
-
   }
 
 
@@ -1751,36 +1796,30 @@ async function simpanBarangMasuk(
     true;
 
 
-  try{
+  try {
 
     const {
-      data:barang,
-      error:barangError
+      data: barang,
+      error: barangError
     } =
       await supabaseClient
-
       .from("barang")
-
       .select(
         "id,nama,stok"
       )
-
       .eq(
         "id",
         barangId
       )
-
       .single();
 
 
-    if(barangError){
-
+    if (barangError) {
       throw barangError;
-
     }
 
 
-    if(!barang){
+    if (!barang) {
 
       throw new Error(
         "Barang tidak ditemukan"
@@ -1789,63 +1828,61 @@ async function simpanBarangMasuk(
     }
 
 
+    const stokSaatIni =
+      numberValue(
+        barang.stok
+      );
+
+
     const stokBaru =
-      Number(
-        barang.stok || 0
-      ) +
+      stokSaatIni +
       qty;
 
 
     const {
-      error:insertError
+      error: insertError
     } =
       await supabaseClient
-
       .from("barang_masuk")
-
       .insert([{
 
         barang_id:
           barangId,
 
-        qty,
+        qty:
 
-        keterangan
+          qty,
+
+        keterangan:
+          keterangan
 
       }]);
 
 
-    if(insertError){
-
+    if (insertError) {
       throw insertError;
-
     }
 
 
     const {
-      error:updateError
+      error: updateError
     } =
       await supabaseClient
-
       .from("barang")
-
       .update({
 
         stok:
           stokBaru
 
       })
-
       .eq(
         "id",
         barangId
       );
 
 
-    if(updateError){
-
+    if (updateError) {
       throw updateError;
-
     }
 
 
@@ -1860,15 +1897,13 @@ async function simpanBarangMasuk(
 
 
     const form =
-      document.getElementById(
+      getElement(
         "formMasuk"
       );
 
 
-    if(form){
-
+    if (form) {
       form.reset();
-
     }
 
 
@@ -1887,7 +1922,7 @@ async function simpanBarangMasuk(
     ]);
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Barang masuk:",
@@ -1899,7 +1934,7 @@ async function simpanBarangMasuk(
       "Barang masuk gagal"
     );
 
-  }finally{
+  } finally {
 
     isSavingTransaksi =
       false;
@@ -1910,51 +1945,47 @@ async function simpanBarangMasuk(
 
 
 /* =========================================================
-   22. LOAD BARANG MASUK
+   23. LOAD BARANG MASUK
 ========================================================= */
 
-async function loadBarangMasuk(){
+async function loadBarangMasuk() {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("barang_masuk")
-
       .select(`
         *,
         barang(
           nama
         )
       `)
-
       .order(
         "id",
         {
-          ascending:false
+          ascending: false
         }
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
     let html = "";
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          html += `
+        html += `
 
           <tr>
 
@@ -1972,8 +2003,8 @@ async function loadBarangMasuk(){
             </td>
 
             <td>
-              ${Number(
-                item.qty || 0
+              ${numberValue(
+                item.qty
               )}
             </td>
 
@@ -1986,26 +2017,26 @@ async function loadBarangMasuk(){
 
           </tr>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
 
     const table =
-      document.getElementById(
+      getElement(
         "barangMasukTable"
       );
 
 
-    if(table){
+    if (table) {
 
       table.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Load barang masuk:",
@@ -2018,26 +2049,26 @@ async function loadBarangMasuk(){
 
 
 /* =========================================================
-   23. BARANG KELUAR FORM
+   24. BARANG KELUAR FORM
 ========================================================= */
 
-function setupFormKeluar(){
+function setupFormKeluar() {
 
   const form =
-    document.getElementById(
+    getElement(
       "formKeluar"
     );
 
 
-  if(!form){
+  if (!form) {
     return;
   }
 
 
-  if(
+  if (
     form.dataset.initialized ===
     "true"
-  ){
+  ) {
 
     return;
 
@@ -2050,7 +2081,7 @@ function setupFormKeluar(){
 
   form.addEventListener(
     "submit",
-    async event=>{
+    async event => {
 
       event.preventDefault();
 
@@ -2077,12 +2108,12 @@ function setupFormKeluar(){
         );
 
 
-      if(
+      if (
         !Number.isInteger(
           barangId
         ) ||
         barangId <= 0
-      ){
+      ) {
 
         showToast(
           "Pilih barang"
@@ -2093,10 +2124,10 @@ function setupFormKeluar(){
       }
 
 
-      if(
+      if (
         !Number.isInteger(qty) ||
         qty <= 0
-      ){
+      ) {
 
         showToast(
           "Jumlah barang tidak valid"
@@ -2120,19 +2151,17 @@ function setupFormKeluar(){
 
 
 /* =========================================================
-   24. SIMPAN BARANG KELUAR
+   25. SIMPAN BARANG KELUAR
 ========================================================= */
 
 async function simpanBarangKeluar(
   barangId,
   qty,
   tujuan
-){
+) {
 
-  if(isSavingTransaksi){
-
+  if (isSavingTransaksi) {
     return;
-
   }
 
 
@@ -2140,36 +2169,30 @@ async function simpanBarangKeluar(
     true;
 
 
-  try{
+  try {
 
     const {
-      data:barang,
-      error:barangError
+      data: barang,
+      error: barangError
     } =
       await supabaseClient
-
       .from("barang")
-
       .select(
         "id,nama,stok"
       )
-
       .eq(
         "id",
         barangId
       )
-
       .single();
 
 
-    if(barangError){
-
+    if (barangError) {
       throw barangError;
-
     }
 
 
-    if(!barang){
+    if (!barang) {
 
       throw new Error(
         "Barang tidak ditemukan"
@@ -2179,18 +2202,18 @@ async function simpanBarangKeluar(
 
 
     const stokSaatIni =
-      Number(
-        barang.stok || 0
+      numberValue(
+        barang.stok
       );
 
 
-    if(
+    if (
       stokSaatIni <
       qty
-    ){
+    ) {
 
       showToast(
-        `Stok tidak cukup. Stok tersedia: ${stokSaatIni}`
+        `Stok tidak cukup. Tersedia: ${stokSaatIni}`
       );
 
       return;
@@ -2204,55 +2227,48 @@ async function simpanBarangKeluar(
 
 
     const {
-      error:insertError
+      error: insertError
     } =
       await supabaseClient
-
       .from("barang_keluar")
-
       .insert([{
 
         barang_id:
           barangId,
 
-        qty,
+        qty:
+          qty,
 
-        tujuan
+        tujuan:
+          tujuan
 
       }]);
 
 
-    if(insertError){
-
+    if (insertError) {
       throw insertError;
-
     }
 
 
     const {
-      error:updateError
+      error: updateError
     } =
       await supabaseClient
-
       .from("barang")
-
       .update({
 
         stok:
           stokBaru
 
       })
-
       .eq(
         "id",
         barangId
       );
 
 
-    if(updateError){
-
+    if (updateError) {
       throw updateError;
-
     }
 
 
@@ -2267,15 +2283,13 @@ async function simpanBarangKeluar(
 
 
     const form =
-      document.getElementById(
+      getElement(
         "formKeluar"
       );
 
 
-    if(form){
-
+    if (form) {
       form.reset();
-
     }
 
 
@@ -2294,7 +2308,7 @@ async function simpanBarangKeluar(
     ]);
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Barang keluar:",
@@ -2306,7 +2320,7 @@ async function simpanBarangKeluar(
       "Barang keluar gagal"
     );
 
-  }finally{
+  } finally {
 
     isSavingTransaksi =
       false;
@@ -2317,51 +2331,47 @@ async function simpanBarangKeluar(
 
 
 /* =========================================================
-   25. LOAD BARANG KELUAR
+   26. LOAD BARANG KELUAR
 ========================================================= */
 
-async function loadBarangKeluar(){
+async function loadBarangKeluar() {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("barang_keluar")
-
       .select(`
         *,
         barang(
           nama
         )
       `)
-
       .order(
         "id",
         {
-          ascending:false
+          ascending: false
         }
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
     let html = "";
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          html += `
+        html += `
 
           <tr>
 
@@ -2379,8 +2389,8 @@ async function loadBarangKeluar(){
             </td>
 
             <td>
-              ${Number(
-                item.qty || 0
+              ${numberValue(
+                item.qty
               )}
             </td>
 
@@ -2393,26 +2403,26 @@ async function loadBarangKeluar(){
 
           </tr>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
 
     const table =
-      document.getElementById(
+      getElement(
         "barangKeluarTable"
       );
 
 
-    if(table){
+    if (table) {
 
       table.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Load barang keluar:",
@@ -2425,17 +2435,18 @@ async function loadBarangKeluar(){
 
 
 /* =========================================================
-   26. SUPPLIER MODAL
+   27. SUPPLIER MODAL
 ========================================================= */
 
-function openSupplierModal(){
+function openSupplierModal() {
 
   const modal =
-    document.getElementById(
+    getElement(
       "supplierModal"
     );
 
-  if(modal){
+
+  if (modal) {
 
     modal.classList.remove(
       "hidden"
@@ -2446,14 +2457,15 @@ function openSupplierModal(){
 }
 
 
-function closeSupplierModal(){
+function closeSupplierModal() {
 
   const modal =
-    document.getElementById(
+    getElement(
       "supplierModal"
     );
 
-  if(modal){
+
+  if (modal) {
 
     modal.classList.add(
       "hidden"
@@ -2465,46 +2477,42 @@ function closeSupplierModal(){
 
 
 /* =========================================================
-   27. LOAD SUPPLIER
+   28. LOAD SUPPLIER
 ========================================================= */
 
-async function loadSupplier(){
+async function loadSupplier() {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("supplier")
-
       .select("*")
-
       .order(
         "id",
         {
-          ascending:false
+          ascending: false
         }
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
     let html = "";
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          html += `
+        html += `
 
           <tr>
 
@@ -2524,13 +2532,6 @@ async function loadSupplier(){
 
             <td>
               ${escapeHTML(
-                item.email ||
-                "-"
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
                 item.alamat ||
                 "-"
               )}
@@ -2539,45 +2540,43 @@ async function loadSupplier(){
             <td>
 
               <button
-              type="button"
-              onclick="editSupplier(${item.id})">
-
+                type="button"
+                onclick="editSupplier(${item.id})"
+              >
                 Edit
-
               </button>
 
               <button
-              type="button"
-              onclick="hapusSupplier(${item.id})">
-
+                type="button"
+                onclick="hapusSupplier(${item.id})"
+              >
                 Hapus
-
               </button>
 
             </td>
 
           </tr>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
 
     const table =
-      document.getElementById(
+      getElement(
         "supplierTable"
       );
 
 
-    if(table){
+    if (table) {
 
       table.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Load supplier:",
@@ -2590,15 +2589,13 @@ async function loadSupplier(){
 
 
 /* =========================================================
-   28. SAVE SUPPLIER
+   29. SAVE SUPPLIER
 ========================================================= */
 
-async function saveSupplier(){
+async function saveSupplier() {
 
-  if(isSavingSupplier){
-
+  if (isSavingSupplier) {
     return;
-
   }
 
 
@@ -2612,18 +2609,13 @@ async function saveSupplier(){
       "supplierTelepon"
     );
 
-  const email =
-    getValue(
-      "supplierEmail"
-    );
-
   const alamat =
     getValue(
       "supplierAlamat"
     );
 
 
-  if(!nama){
+  if (!nama) {
 
     showToast(
       "Nama supplier wajib diisi"
@@ -2638,47 +2630,37 @@ async function saveSupplier(){
     true;
 
 
-  setButtonLoading(
-    "btnSaveSupplier",
-    true
-  );
-
-
-  try{
+  try {
 
     const payload = {
 
       nama,
+
       telepon,
-      email,
+
       alamat
 
     };
 
 
-    if(supplierEditId){
+    if (supplierEditId) {
 
       const {
         error
       } =
         await supabaseClient
-
         .from("supplier")
-
         .update(
           payload
         )
-
         .eq(
           "id",
           supplierEditId
         );
 
 
-      if(error){
-
+      if (error) {
         throw error;
-
       }
 
 
@@ -2692,24 +2674,20 @@ async function saveSupplier(){
       );
 
 
-    }else{
+    } else {
 
       const {
         error
       } =
         await supabaseClient
-
         .from("supplier")
-
         .insert([
           payload
         ]);
 
 
-      if(error){
-
+      if (error) {
         throw error;
-
       }
 
 
@@ -2732,7 +2710,7 @@ async function saveSupplier(){
     await loadSupplier();
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Save supplier:",
@@ -2744,15 +2722,10 @@ async function saveSupplier(){
       "Gagal menyimpan supplier"
     );
 
-  }finally{
+  } finally {
 
     isSavingSupplier =
       false;
-
-    setButtonLoading(
-      "btnSaveSupplier",
-      false
-    );
 
   }
 
@@ -2760,34 +2733,39 @@ async function saveSupplier(){
 
 
 /* =========================================================
-   29. EDIT SUPPLIER
+   30. EDIT SUPPLIER
 ========================================================= */
 
-async function editSupplier(id){
+async function editSupplier(id) {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("supplier")
-
       .select("*")
-
       .eq(
         "id",
         id
       )
-
       .single();
 
 
-    if(error){
-
+    if (error) {
       throw error;
+    }
+
+
+    if (!data) {
+
+      showToast(
+        "Supplier tidak ditemukan"
+      );
+
+      return;
 
     }
 
@@ -2798,29 +2776,27 @@ async function editSupplier(id){
 
     setValue(
       "supplierNama",
-      data.nama || ""
+      data.nama ||
+      ""
     );
 
     setValue(
       "supplierTelepon",
-      data.telepon || ""
-    );
-
-    setValue(
-      "supplierEmail",
-      data.email || ""
+      data.telepon ||
+      ""
     );
 
     setValue(
       "supplierAlamat",
-      data.alamat || ""
+      data.alamat ||
+      ""
     );
 
 
     openSupplierModal();
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Edit supplier:",
@@ -2838,40 +2814,36 @@ async function editSupplier(id){
 
 
 /* =========================================================
-   30. DELETE SUPPLIER
+   31. DELETE SUPPLIER
 ========================================================= */
 
-async function hapusSupplier(id){
+async function hapusSupplier(id) {
 
-  if(
+  if (
     !confirm(
       "Yakin ingin menghapus supplier ini?"
     )
-  ){
+  ) {
 
     return;
 
   }
 
 
-  try{
+  try {
 
     const {
-      data:supplier
+      data: supplier
     } =
       await supabaseClient
-
       .from("supplier")
-
       .select(
         "nama"
       )
-
       .eq(
         "id",
         id
       )
-
       .single();
 
 
@@ -2879,21 +2851,16 @@ async function hapusSupplier(id){
       error
     } =
       await supabaseClient
-
       .from("supplier")
-
       .delete()
-
       .eq(
         "id",
         id
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
@@ -2913,7 +2880,7 @@ async function hapusSupplier(id){
     await loadSupplier();
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Delete supplier:",
@@ -2931,10 +2898,10 @@ async function hapusSupplier(id){
 
 
 /* =========================================================
-   31. CLEAR SUPPLIER
+   32. CLEAR SUPPLIER
 ========================================================= */
 
-function clearSupplierForm(){
+function clearSupplierForm() {
 
   setValue(
     "supplierNama",
@@ -2947,49 +2914,13 @@ function clearSupplierForm(){
   );
 
   setValue(
-    "supplierEmail",
-    ""
-  );
-
-  setValue(
     "supplierAlamat",
     ""
   );
 
+
   supplierEditId =
     null;
-
-}
-
-
-/* =========================================================
-   32. SEARCH SUPPLIER
-========================================================= */
-
-function searchSupplier(){
-
-  const keyword =
-    getValue(
-      "searchSupplier"
-    ).toLowerCase();
-
-
-  document
-    .querySelectorAll(
-      "#supplierTable tr"
-    )
-    .forEach(
-      row=>{
-
-        row.style.display =
-          row.innerText
-          .toLowerCase()
-          .includes(keyword)
-          ? ""
-          : "none";
-
-      }
-    );
 
 }
 
@@ -3000,9 +2931,9 @@ function searchSupplier(){
 
 async function saveActivity(
   aktivitas
-){
+) {
 
-  try{
+  try {
 
     const {
       data
@@ -3021,12 +2952,11 @@ async function saveActivity(
       error
     } =
       await supabaseClient
-
       .from("activity_logs")
-
       .insert([{
 
-        aktivitas,
+        aktivitas:
+          aktivitas,
 
         user_email:
           email
@@ -3034,10 +2964,10 @@ async function saveActivity(
       }]);
 
 
-    if(error){
+    if (error) {
 
       /*
-        Log gagal tidak boleh
+        Activity log tidak boleh
         menggagalkan transaksi utama.
       */
 
@@ -3048,7 +2978,7 @@ async function saveActivity(
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Activity log:",
@@ -3060,45 +2990,46 @@ async function saveActivity(
 }
 
 
-async function loadActivity(){
+/* =========================================================
+   34. LOAD ACTIVITY LOG
+========================================================= */
 
-  try{
+async function loadActivity() {
+
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("activity_logs")
-
-      .select("*")
-
+      .select(
+        "*"
+      )
       .order(
         "id",
         {
-          ascending:false
+          ascending: false
         }
       )
-
       .limit(100);
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
     let html = "";
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          html += `
+        html += `
 
           <tr>
 
@@ -3107,13 +3038,6 @@ async function loadActivity(){
                 formatDate(
                   item.created_at
                 )
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                item.user_email ||
-                "admin"
               )}
             </td>
 
@@ -3126,26 +3050,26 @@ async function loadActivity(){
 
           </tr>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
 
     const table =
-      document.getElementById(
+      getElement(
         "activityTable"
       );
 
 
-    if(table){
+    if (table) {
 
       table.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Load activity:",
@@ -3157,12 +3081,33 @@ async function loadActivity(){
 }
 
 
-function searchActivity(){
+/* =========================================================
+   35. SEARCH ACTIVITY
+========================================================= */
+
+function searchActivity() {
+
+  /*
+    HTML saat ini belum mempunyai
+    search activity.
+    Fungsi tetap disediakan
+    untuk pengembangan berikutnya.
+  */
+
+  const input =
+    getElement(
+      "searchActivity"
+    );
+
+
+  if (!input) {
+    return;
+  }
+
 
   const keyword =
-    getValue(
-      "searchActivity"
-    ).toLowerCase();
+    input.value
+    .toLowerCase();
 
 
   document
@@ -3170,12 +3115,14 @@ function searchActivity(){
       "#activityTable tr"
     )
     .forEach(
-      row=>{
+      row => {
 
         row.style.display =
           row.innerText
           .toLowerCase()
-          .includes(keyword)
+          .includes(
+            keyword
+          )
           ? ""
           : "none";
 
@@ -3186,86 +3133,214 @@ function searchActivity(){
 
 
 /* =========================================================
-   34. STOCK OPNAME SELECT
+   36. STOCK OPNAME FORM
 ========================================================= */
 
-async function loadSelectOpname(){
+function createStockOpnameForm() {
 
-  try{
+  const page =
+    getElement(
+      "stockPage"
+    );
+
+
+  if (!page) {
+    return;
+  }
+
+
+  if (
+    getElement(
+      "formOpname"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const panel =
+    page.querySelector(
+      ".panel"
+    );
+
+
+  if (!panel) {
+    return;
+  }
+
+
+  const form =
+    document.createElement(
+      "form"
+    );
+
+
+  form.id =
+    "formOpname";
+
+
+  form.style.marginBottom =
+    "20px";
+
+
+  form.innerHTML = `
+
+    <div class="opname-form">
+
+      <select
+        id="opnameBarang"
+        required
+      >
+
+        <option value="">
+          Pilih Barang
+        </option>
+
+      </select>
+
+      <input
+        type="number"
+        id="opnameStok"
+        min="0"
+        step="1"
+        placeholder="Stok Fisik"
+        required
+      >
+
+      <input
+        type="text"
+        id="opnameKeterangan"
+        placeholder="Keterangan"
+      >
+
+      <button
+        type="submit"
+      >
+        Simpan Opname
+      </button>
+
+    </div>
+
+  `;
+
+
+  const title =
+    panel.querySelector(
+      "h3"
+    );
+
+
+  if (title) {
+
+    title.insertAdjacentElement(
+      "afterend",
+      form
+    );
+
+  } else {
+
+    panel.prepend(
+      form
+    );
+
+  }
+
+
+  form.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      await submitStockOpname();
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   37. LOAD SELECT OPNAME
+========================================================= */
+
+async function loadSelectOpname() {
+
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("barang")
-
       .select(
         "id,nama,stok"
       )
-
       .order(
         "nama",
         {
-          ascending:true
+          ascending: true
         }
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
     let html =
-      `<option value="">
+      `
+      <option value="">
         Pilih Barang
-      </option>`;
+      </option>
+      `;
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          html += `
+        html += `
 
-          <option value="${item.id}">
-
+          <option
+            value="${item.id}"
+          >
             ${escapeHTML(
               item.nama
             )}
-            (Stok: ${Number(
-              item.stok || 0
+            (Stok: ${numberValue(
+              item.stok
             )})
-
           </option>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
 
     const select =
-      document.getElementById(
+      getElement(
         "opnameBarang"
       );
 
 
-    if(select){
+    if (select) {
 
       select.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
-      "Select opname:",
+      "Load select opname:",
       error
     );
 
@@ -3275,61 +3350,74 @@ async function loadSelectOpname(){
 
 
 /* =========================================================
-   35. LOAD STOCK OPNAME
+   38. LOAD STOCK OPNAME
 ========================================================= */
 
-async function loadStockOpname(){
+async function loadStockOpname() {
 
-  try{
+  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-
       .from("stock_opname")
-
       .select(`
         *,
         barang(
           nama
         )
       `)
-
       .order(
         "id",
         {
-          ascending:false
+          ascending: false
         }
       );
 
 
-    if(error){
-
+    if (error) {
       throw error;
-
     }
 
 
     let html = "";
 
 
-    (data || [])
-      .forEach(
-        item=>{
+    (
+      data || []
+    ).forEach(
+      item => {
 
-          html += `
+        const selisih =
+          numberValue(
+            item.selisih
+          );
+
+
+        let status =
+          "";
+
+
+        if (selisih > 0) {
+
+          status =
+            `+${selisih}`;
+
+        } else {
+
+          status =
+            String(
+              selisih
+            );
+
+        }
+
+
+        html += `
 
           <tr>
-
-            <td>
-              ${escapeHTML(
-                formatDate(
-                  item.created_at
-                )
-              )}
-            </td>
 
             <td>
               ${escapeHTML(
@@ -3339,52 +3427,51 @@ async function loadStockOpname(){
             </td>
 
             <td>
-              ${Number(
-                item.stok_sistem || 0
+              ${numberValue(
+                item.stok_sistem
               )}
             </td>
 
             <td>
-              ${Number(
-                item.stok_fisik || 0
-              )}
-            </td>
-
-            <td>
-              ${Number(
-                item.selisih || 0
+              ${numberValue(
+                item.stok_fisik
               )}
             </td>
 
             <td>
               ${escapeHTML(
-                item.keterangan ||
-                "-"
+                status
               )}
             </td>
 
           </tr>
 
-          `;
+        `;
 
-        }
-      );
+      }
+    );
 
+
+    /*
+      HTML Anda menggunakan
+      stockTable, bukan
+      stockOpnameTable.
+    */
 
     const table =
-      document.getElementById(
-        "stockOpnameTable"
+      getElement(
+        "stockTable"
       );
 
 
-    if(table){
+    if (table) {
 
       table.innerHTML =
         html;
 
     }
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Load stock opname:",
@@ -3397,15 +3484,13 @@ async function loadStockOpname(){
 
 
 /* =========================================================
-   36. STOCK OPNAME SUBMIT
+   39. SUBMIT STOCK OPNAME
 ========================================================= */
 
-async function submitStockOpname(){
+async function submitStockOpname() {
 
-  if(isSavingOpname){
-
+  if (isSavingOpname) {
     return;
-
   }
 
 
@@ -3431,12 +3516,12 @@ async function submitStockOpname(){
     );
 
 
-  if(
+  if (
     !Number.isInteger(
       barangId
     ) ||
     barangId <= 0
-  ){
+  ) {
 
     showToast(
       "Pilih barang terlebih dahulu"
@@ -3447,12 +3532,12 @@ async function submitStockOpname(){
   }
 
 
-  if(
+  if (
     !Number.isInteger(
       stokFisik
     ) ||
     stokFisik < 0
-  ){
+  ) {
 
     showToast(
       "Stok fisik tidak valid"
@@ -3467,36 +3552,30 @@ async function submitStockOpname(){
     true;
 
 
-  try{
+  try {
 
     const {
-      data:barang,
-      error:barangError
+      data: barang,
+      error: barangError
     } =
       await supabaseClient
-
       .from("barang")
-
       .select(
         "id,nama,stok"
       )
-
       .eq(
         "id",
         barangId
       )
-
       .single();
 
 
-    if(barangError){
-
+    if (barangError) {
       throw barangError;
-
     }
 
 
-    if(!barang){
+    if (!barang) {
 
       throw new Error(
         "Barang tidak ditemukan"
@@ -3506,8 +3585,8 @@ async function submitStockOpname(){
 
 
     const stokSistem =
-      Number(
-        barang.stok || 0
+      numberValue(
+        barang.stok
       );
 
 
@@ -3517,12 +3596,10 @@ async function submitStockOpname(){
 
 
     const {
-      error:opnameError
+      error: opnameError
     } =
       await supabaseClient
-
       .from("stock_opname")
-
       .insert([{
 
         barang_id:
@@ -3534,44 +3611,39 @@ async function submitStockOpname(){
         stok_fisik:
           stokFisik,
 
-        selisih,
+        selisih:
+          selisih,
 
-        keterangan
+        keterangan:
+          keterangan
 
       }]);
 
 
-    if(opnameError){
-
+    if (opnameError) {
       throw opnameError;
-
     }
 
 
     const {
-      error:updateError
+      error: updateError
     } =
       await supabaseClient
-
       .from("barang")
-
       .update({
 
         stok:
           stokFisik
 
       })
-
       .eq(
         "id",
         barangId
       );
 
 
-    if(updateError){
-
+    if (updateError) {
       throw updateError;
-
     }
 
 
@@ -3586,12 +3658,12 @@ async function submitStockOpname(){
 
 
     const form =
-      document.getElementById(
+      getElement(
         "formOpname"
       );
 
 
-    if(form){
+    if (form) {
 
       form.reset();
 
@@ -3613,7 +3685,7 @@ async function submitStockOpname(){
     ]);
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Stock opname:",
@@ -3625,7 +3697,7 @@ async function submitStockOpname(){
       "Stock opname gagal"
     );
 
-  }finally{
+  } finally {
 
     isSavingOpname =
       false;
@@ -3636,18 +3708,18 @@ async function submitStockOpname(){
 
 
 /* =========================================================
-   37. EXPORT EXCEL
+   40. EXPORT EXCEL
 ========================================================= */
 
-async function exportExcel(){
+async function exportExcel() {
 
-  if(
+  if (
     typeof XLSX ===
     "undefined"
-  ){
+  ) {
 
     showToast(
-      "Library Excel belum dipasang"
+      "Library Excel belum tersedia"
     );
 
     return;
@@ -3655,7 +3727,7 @@ async function exportExcel(){
   }
 
 
-  try{
+  try {
 
     showToast(
       "Menyiapkan Excel..."
@@ -3663,15 +3735,10 @@ async function exportExcel(){
 
 
     const [
-
       barangResult,
-
       masukResult,
-
       keluarResult,
-
       supplierResult
-
     ] =
       await Promise.all([
 
@@ -3684,7 +3751,9 @@ async function exportExcel(){
           .from("barang_masuk")
           .select(`
             *,
-            barang(nama)
+            barang(
+              nama
+            )
           `)
           .order("id"),
 
@@ -3692,7 +3761,9 @@ async function exportExcel(){
           .from("barang_keluar")
           .select(`
             *,
-            barang(nama)
+            barang(
+              nama
+            )
           `)
           .order("id"),
 
@@ -3704,29 +3775,35 @@ async function exportExcel(){
       ]);
 
 
-    if(barangResult.error)
+    if (barangResult.error) {
       throw barangResult.error;
+    }
 
-    if(masukResult.error)
+    if (masukResult.error) {
       throw masukResult.error;
+    }
 
-    if(keluarResult.error)
+    if (keluarResult.error) {
       throw keluarResult.error;
+    }
 
-    if(supplierResult.error)
+    if (supplierResult.error) {
       throw supplierResult.error;
+    }
 
 
     const barang =
-      (barangResult.data || [])
-      .map(
-        item=>({
+      (
+        barangResult.data ||
+        []
+      ).map(
+        item => ({
 
           Kode:
-            item.kode,
+            item.kode || "",
 
           Nama:
-            item.nama,
+            item.nama || "",
 
           Kategori:
             item.kategori || "",
@@ -3738,13 +3815,13 @@ async function exportExcel(){
             item.rak || "",
 
           Stok:
-            Number(
-              item.stok || 0
+            numberValue(
+              item.stok
             ),
 
           "Stok Minimum":
-            Number(
-              item.stok_minimum || 0
+            numberValue(
+              item.stok_minimum
             )
 
         })
@@ -3752,9 +3829,11 @@ async function exportExcel(){
 
 
     const masuk =
-      (masukResult.data || [])
-      .map(
-        item=>({
+      (
+        masukResult.data ||
+        []
+      ).map(
+        item => ({
 
           Tanggal:
             formatDate(
@@ -3766,8 +3845,8 @@ async function exportExcel(){
             "",
 
           Qty:
-            Number(
-              item.qty || 0
+            numberValue(
+              item.qty
             ),
 
           Keterangan:
@@ -3779,9 +3858,11 @@ async function exportExcel(){
 
 
     const keluar =
-      (keluarResult.data || [])
-      .map(
-        item=>({
+      (
+        keluarResult.data ||
+        []
+      ).map(
+        item => ({
 
           Tanggal:
             formatDate(
@@ -3793,8 +3874,8 @@ async function exportExcel(){
             "",
 
           Qty:
-            Number(
-              item.qty || 0
+            numberValue(
+              item.qty
             ),
 
           Tujuan:
@@ -3806,9 +3887,11 @@ async function exportExcel(){
 
 
     const supplier =
-      (supplierResult.data || [])
-      .map(
-        item=>({
+      (
+        supplierResult.data ||
+        []
+      ).map(
+        item => ({
 
           Nama:
             item.nama ||
@@ -3816,10 +3899,6 @@ async function exportExcel(){
 
           Telepon:
             item.telepon ||
-            "",
-
-          Email:
-            item.email ||
             "",
 
           Alamat:
@@ -3834,53 +3913,60 @@ async function exportExcel(){
       XLSX.utils.book_new();
 
 
-    XLSX.utils.book_append_sheet(
-      workbook,
-
+    const barangSheet =
       XLSX.utils.json_to_sheet(
         barang
-      ),
+      );
 
+
+    const masukSheet =
+      XLSX.utils.json_to_sheet(
+        masuk
+      );
+
+
+    const keluarSheet =
+      XLSX.utils.json_to_sheet(
+        keluar
+      );
+
+
+    const supplierSheet =
+      XLSX.utils.json_to_sheet(
+        supplier
+      );
+
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      barangSheet,
       "Stok Barang"
     );
 
 
     XLSX.utils.book_append_sheet(
       workbook,
-
-      XLSX.utils.json_to_sheet(
-        masuk
-      ),
-
+      masukSheet,
       "Barang Masuk"
     );
 
 
     XLSX.utils.book_append_sheet(
       workbook,
-
-      XLSX.utils.json_to_sheet(
-        keluar
-      ),
-
+      keluarSheet,
       "Barang Keluar"
     );
 
 
     XLSX.utils.book_append_sheet(
       workbook,
-
-      XLSX.utils.json_to_sheet(
-        supplier
-      ),
-
+      supplierSheet,
       "Supplier"
     );
 
 
     XLSX.writeFile(
       workbook,
-
       `INVENTRA_PRO_${getTodayString()}.xlsx`
     );
 
@@ -3895,7 +3981,7 @@ async function exportExcel(){
     );
 
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Export Excel:",
@@ -3913,12 +3999,12 @@ async function exportExcel(){
 
 
 /* =========================================================
-   38. REFRESH ALL
+   41. REFRESH DATA
 ========================================================= */
 
-async function refreshAllData(){
+async function refreshAllData() {
 
-  try{
+  try {
 
     await Promise.allSettled([
 
@@ -3926,11 +4012,11 @@ async function refreshAllData(){
 
       loadBarang(),
 
-      loadSupplier(),
-
       loadBarangMasuk(),
 
       loadBarangKeluar(),
+
+      loadSupplier(),
 
       loadActivity(),
 
@@ -3942,7 +4028,7 @@ async function refreshAllData(){
 
     ]);
 
-  }catch(error){
+  } catch (error) {
 
     console.error(
       "Refresh all:",
@@ -3955,24 +4041,27 @@ async function refreshAllData(){
 
 
 /* =========================================================
-   39. AUTO REFRESH
+   42. AUTO REFRESH
 ========================================================= */
 
-function startAutoRefresh(){
+function startAutoRefresh() {
 
   stopAutoRefresh();
 
 
   /*
-    Dashboard diperbarui setiap 30 detik.
-    Tidak reload seluruh tabel supaya ringan.
+    Hanya dashboard yang
+    diperbarui otomatis.
+    
+    Ini sengaja agar aplikasi
+    tetap ringan.
   */
 
   autoRefreshTimer =
     setInterval(
-      async()=>{
+      async () => {
 
-        try{
+        try {
 
           const {
             data
@@ -3982,15 +4071,16 @@ function startAutoRefresh(){
             .getSession();
 
 
-          if(
-            data?.session
-          ){
+          if (
+            data &&
+            data.session
+          ) {
 
             await loadDashboard();
 
           }
 
-        }catch(error){
+        } catch (error) {
 
           console.error(
             "Auto refresh:",
@@ -4006,9 +4096,11 @@ function startAutoRefresh(){
 }
 
 
-function stopAutoRefresh(){
+function stopAutoRefresh() {
 
-  if(autoRefreshTimer){
+  if (
+    autoRefreshTimer
+  ) {
 
     clearInterval(
       autoRefreshTimer
@@ -4023,24 +4115,24 @@ function stopAutoRefresh(){
 
 
 /* =========================================================
-   40. TAB VISIBILITY
+   43. VISIBILITY CHANGE
 ========================================================= */
 
 document.addEventListener(
   "visibilitychange",
-  async()=>{
+  async () => {
 
-    if(
+    if (
       document.visibilityState !==
       "visible"
-    ){
+    ) {
 
       return;
 
     }
 
 
-    try{
+    try {
 
       const {
         data
@@ -4050,15 +4142,16 @@ document.addEventListener(
         .getSession();
 
 
-      if(
-        data?.session
-      ){
+      if (
+        data &&
+        data.session
+      ) {
 
         await loadDashboard();
 
       }
 
-    }catch(error){
+    } catch (error) {
 
       console.error(
         "Visibility refresh:",
@@ -4072,12 +4165,12 @@ document.addEventListener(
 
 
 /* =========================================================
-   41. ONLINE / OFFLINE
+   44. ONLINE / OFFLINE
 ========================================================= */
 
 window.addEventListener(
   "online",
-  ()=>{
+  () => {
 
     showToast(
       "Koneksi internet kembali"
@@ -4091,7 +4184,7 @@ window.addEventListener(
 
 window.addEventListener(
   "offline",
-  ()=>{
+  () => {
 
     showToast(
       "Koneksi internet terputus"
@@ -4102,17 +4195,17 @@ window.addEventListener(
 
 
 /* =========================================================
-   42. ESCAPE CLOSE MODAL
+   45. ESCAPE CLOSE MODAL
 ========================================================= */
 
 document.addEventListener(
   "keydown",
-  event=>{
+  event => {
 
-    if(
+    if (
       event.key !==
       "Escape"
-    ){
+    ) {
 
       return;
 
@@ -4124,7 +4217,7 @@ document.addEventListener(
         ".modal"
       )
       .forEach(
-        modal=>{
+        modal => {
 
           modal.classList.add(
             "hidden"
@@ -4138,31 +4231,45 @@ document.addEventListener(
 
 
 /* =========================================================
-   43. FORM INITIALIZATION
+   46. CLOSE MODAL WHEN CLICK OUTSIDE
 ========================================================= */
 
-function initializeForms(){
+document.addEventListener(
+  "click",
+  event => {
 
-  setupFormMasuk();
+    if (
+      event.target.classList.contains(
+        "modal"
+      )
+    ) {
 
-  setupFormKeluar();
+      event.target.classList.add(
+        "hidden"
+      );
 
-}
+    }
+
+  }
+);
 
 
 /* =========================================================
-   44. SUPABASE AUTH STATE
+   47. AUTH STATE
 ========================================================= */
 
 supabaseClient
   .auth
   .onAuthStateChange(
-    (event,session)=>{
+    (
+      event,
+      session
+    ) => {
 
-      if(
+      if (
         event ===
         "SIGNED_OUT"
-      ){
+      ) {
 
         stopAutoRefresh();
 
@@ -4171,12 +4278,24 @@ supabaseClient
       }
 
 
-      if(
+      if (
         session &&
         !appInitialized
-      ){
+      ) {
 
-        showApplication();
+        /*
+          Jangan await langsung
+          di callback Auth.
+        */
+
+        setTimeout(
+          () => {
+
+            showApplication();
+
+          },
+          0
+        );
 
       }
 
@@ -4185,7 +4304,22 @@ supabaseClient
 
 
 /* =========================================================
-   45. GLOBAL FUNCTIONS
+   48. INITIALIZE FORMS
+========================================================= */
+
+function initializeForms() {
+
+  setupFormMasuk();
+
+  setupFormKeluar();
+
+  createStockOpnameForm();
+
+}
+
+
+/* =========================================================
+   49. GLOBAL FUNCTIONS
    Untuk onclick HTML
 ========================================================= */
 
@@ -4243,20 +4377,17 @@ window.hapusSupplier =
 window.clearSupplierForm =
   clearSupplierForm;
 
-window.searchSupplier =
-  searchSupplier;
-
 window.searchActivity =
   searchActivity;
 
 window.exportExcel =
   exportExcel;
 
-window.loadStockOpname =
-  loadStockOpname;
-
 window.submitStockOpname =
   submitStockOpname;
+
+window.loadStockOpname =
+  loadStockOpname;
 
 window.loadSelectOpname =
   loadSelectOpname;
@@ -4266,19 +4397,55 @@ window.refreshAllData =
 
 
 /* =========================================================
-   46. START APPLICATION
+   50. START
 ========================================================= */
 
-initializeForms();
+function startInventra() {
 
-checkSession();
+  hideLoadingScreen();
+
+  initializeForms();
+
+  checkSession();
+
+}
+
+
+/*
+  Karena app.js dipanggil di bagian
+  paling bawah HTML, DOM sebenarnya
+  sudah tersedia.
+
+  Tetapi tetap dibuat aman jika nanti
+  posisi script dipindahkan ke <head>.
+*/
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    startInventra,
+    {
+      once: true
+    }
+  );
+
+} else {
+
+  startInventra();
+
+}
 
 
 /* =========================================================
    INVENTRA PRO v1.0
-   READY
+   PRODUCTION READY
 ========================================================= */
 
 console.log(
   "INVENTRA PRO v1.0 - Production loaded."
 );
+```
